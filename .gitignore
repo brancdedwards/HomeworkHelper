@@ -45,4 +45,4 @@ env/
 output/
 exports/
 *.txt
-data/passages
+passages
