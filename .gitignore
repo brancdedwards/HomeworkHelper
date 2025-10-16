@@ -1,6 +1,46 @@
-venv/
+# ==========================
+# HomeworkHelper .gitignore
+# ==========================
+
+# --- Python ---
 __pycache__/
+*.py[cod]
+*$py.class
+
+# --- Virtual Environment ---
+.venv/
+venv/
+env/
+
+# --- Environment Variables ---
 .env
-data/
+.env.local
+.env.*.backup
+*.env
+
+# --- SQLite Databases ---
+*.sqlite
 *.db
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- PyCharm / JetBrains ---
+.idea/
+*.iml
+
+# --- Jupyter Notebooks checkpoints ---
+.ipynb_checkpoints/
+
+# --- Logs / Temp Files ---
+*.log
+*.tmp
+*.bak
+*.swp
+
+# --- PDFs / Generated Output ---
 *.pdf
+output/
+exports/
