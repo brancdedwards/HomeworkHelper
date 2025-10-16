@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/ab18637f-b0c8-46e1-92ca-2424938d48d3/console.sql" value="ab18637f-b0c8-46e1-92ca-2424938d48d3" />
+    <file url="file://$PROJECT_DIR$/utils/passage_loader.py" value="ab18637f-b0c8-46e1-92ca-2424938d48d3" />
+  </component>
+</project>
