@@ -44,3 +44,5 @@ env/
 *.pdf
 output/
 exports/
+*.txt
+data/passages
