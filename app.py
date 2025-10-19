@@ -13,7 +13,7 @@ st.set_page_config(
 st.sidebar.title("📚 Homework Helper")
 menu = st.sidebar.radio(
     "Navigation",
-    ["Learning Mode", "View History", "Add Passage", "Grammar Practice"],
+    ["Learning Mode", "View History", "Add Passage", "Grammar Practice", "Admin"],
     help="Choose what you'd like to do today!"
 )
 
@@ -28,6 +28,7 @@ elif menu == "Grammar Practice":
     grammar_practice.show()
 elif menu == "Admin":
     admin_standards.show()
+
 
 # ---------- Sidebar Footer ----------
 st.sidebar.markdown("---")

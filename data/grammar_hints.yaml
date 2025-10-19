@@ -1,0 +1,183 @@
+noun:
+  definition: "A noun names a person, place, thing, or idea."
+  examples: ["dog", "city", "friendship"]
+  link: "https://www.grammar-monster.com/lessons/nouns.htm"
+
+verb:
+  definition: "A verb shows action or a state of being."
+  examples: ["run", "jump", "is", "are"]
+  link: "https://www.grammar-monster.com/lessons/verbs.htm"
+
+adjective:
+  definition: "An adjective describes a noun by giving more information about it."
+  examples: ["red", "tall", "friendly"]
+  link: "https://www.grammar-monster.com/lessons/adjectives.htm"
+
+adverb:
+  definition: "An adverb describes how something happens — often ending in -ly."
+  examples: ["quickly", "very", "silently"]
+  link: "https://www.grammar-monster.com/lessons/adverbs.htm"
+
+pronoun:
+  definition: "A pronoun replaces a noun to avoid repetition."
+  examples: ["he", "she", "it", "they"]
+  link: "https://www.grammar-monster.com/lessons/pronouns.htm"
+
+preposition:
+  definition: "A preposition shows direction, location, or relationship between nouns."
+  examples: ["under", "beside", "during"]
+  link: "https://www.grammar-monster.com/lessons/prepositions.htm"
+
+conjunction:
+  definition: "A conjunction connects words, phrases, or clauses."
+  examples: ["and", "but", "because"]
+  link: "https://www.grammar-monster.com/lessons/conjunctions.htm"
+
+interjection:
+  definition: "An interjection shows emotion or surprise."
+  examples: ["wow", "ouch", "hey"]
+  link: "https://www.grammar-monster.com/lessons/interjections.htm"
+
+subject:
+  definition: "The subject is the person or thing performing the action in a sentence."
+  examples: ["The dog", "My brother", "Sarah"]
+  link: "https://www.grammar-monster.com/lessons/subjects.htm"
+
+predicate:
+  definition: "The predicate tells what the subject does or is. It always contains a verb."
+  examples: ["ran fast", "is happy", "jumps high"]
+  link: "https://www.grammar-monster.com/lessons/predicates.htm"
+
+clause:
+  definition: "A clause is a group of words with a subject and a verb."
+  examples: ["She runs", "Because it rained"]
+  link: "https://www.grammar-monster.com/lessons/clauses.htm"
+
+phrase:
+  definition: "A phrase is a group of words that work together but don't have both a subject and a verb."
+  examples: ["in the park", "after school", "with a smile"]
+  link: "https://www.grammar-monster.com/lessons/phrases.htm"
+
+simile:
+  definition: "A simile compares two things using 'like' or 'as'."
+  examples: ["as brave as a lion", "slept like a baby"]
+  link: "https://www.grammar-monster.com/glossary/simile.htm"
+
+metaphor:
+  definition: "A metaphor compares two things directly, saying one is the other."
+  examples: ["Time is a thief", "The classroom was a zoo"]
+  link: "https://www.grammar-monster.com/glossary/metaphor.htm"
+
+synonym:
+  definition: "A synonym is a word that has the same or nearly the same meaning as another word."
+  examples: ["happy", "joyful", "cheerful"]
+  link: "https://www.grammar-monster.com/glossary/synonym.htm"
+
+antonym:
+  definition: "An antonym is a word that means the opposite of another word."
+  examples: ["hot", "cold", "light", "dark"]
+  link: "https://www.grammar-monster.com/glossary/antonym.htm"
+
+homonym:
+  definition: "A homonym is a word that sounds or is spelled the same as another word but has a different meaning."
+  examples: ["bark (tree)", "bark (dog)", "bat (animal)", "bat (baseball)"]
+  link: "https://www.grammar-monster.com/glossary/homonyms.htm"
+
+prefix:
+  definition: "A prefix is a group of letters added to the beginning of a word to change its meaning."
+  examples: ["un-", "re-", "pre-"]
+  link: "https://www.grammar-monster.com/glossary/prefixes.htm"
+
+suffix:
+  definition: "A suffix is a group of letters added to the end of a word to change its form or meaning."
+  examples: ["-ful", "-less", "-ness"]
+  link: "https://www.grammar-monster.com/glossary/suffixes.htm"
+
+compound_sentence:
+  definition: "A compound sentence has two independent clauses joined by a conjunction."
+  examples: ["I wanted to go, but it was raining.", "She studied hard, and she passed."]
+  link: "https://www.grammar-monster.com/lessons/compound_sentences.htm"
+
+complex_sentence:
+  definition: "A complex sentence has one independent clause and at least one dependent clause."
+  examples: ["Because it was raining, we stayed inside.", "I left when the bell rang."]
+  link: "https://www.grammar-monster.com/lessons/complex_sentences.htm"
+
+comma:
+  definition: "A comma separates items in a list or clauses in a sentence."
+  examples: ["I bought apples, oranges, and bananas.", "When it rains, I read inside."]
+  link: "https://www.grammar-monster.com/lessons/commas.htm"
+
+quotation_marks:
+  definition: "Quotation marks show when someone is speaking or to highlight a title."
+  examples: ["She said, 'Hello!'", "'The Giver' is a great book."]
+  link: "https://www.grammar-monster.com/lessons/quotation_marks.htm"
+
+capitalization:
+  definition: "Capitalization means using a capital letter for proper nouns, the start of sentences, and titles."
+  examples: ["London", "The cat ran away.", "Harry Potter and the Sorcerer's Stone"]
+  link: "https://www.grammar-monster.com/lessons/capital_letters.htm"
+
+apostrophe:
+  definition: "An apostrophe shows ownership or indicates missing letters in contractions."
+  examples: ["Sarah's book", "it's raining", "don't", "can't"]
+  link: "https://www.grammar-monster.com/lessons/apostrophes.htm"
+
+run_on_sentence:
+  definition: "A run-on sentence happens when two or more independent clauses are joined without proper punctuation or a conjunction."
+  examples: ["I went to the store I bought milk.", "She loves pizza she eats it every day."]
+  link: "https://www.grammar-monster.com/lessons/run_on_sentences.htm"
+
+fragment:
+  definition: "A sentence fragment is an incomplete sentence missing a subject, verb, or complete thought."
+  examples: ["Because I was late.", "Running down the hall.", "After the rain stopped."]
+  link: "https://www.grammar-monster.com/lessons/sentence_fragments.htm"
+
+subject_verb_agreement:
+  definition: "Subject-verb agreement means the subject and verb in a sentence must both be singular or both be plural."
+  examples: ["She runs fast.", "They run every morning."]
+  link: "https://www.grammar-monster.com/lessons/subject_verb_agreement.htm"
+
+punctuation:
+  definition: "Punctuation marks help separate ideas and clarify meaning in sentences."
+  examples: [".", ",", "?", "!", ":", ";"]
+  link: "https://www.grammar-monster.com/lessons/punctuation.htm"
+
+semicolon:
+  definition: "A semicolon links two closely related independent clauses or separates items in a list that already contain commas."
+  examples: ["I like tea; my brother prefers coffee.", "We visited Paris, France; Rome, Italy; and Madrid, Spain."]
+  link: "https://www.grammar-monster.com/lessons/semicolons.htm"
+
+colon:
+  definition: "A colon introduces a list, explanation, or quotation after a complete sentence."
+  examples: ["She needs to buy: milk, eggs, and bread.", "He had one goal: to win."]
+  link: "https://www.grammar-monster.com/lessons/colons.htm"
+
+paragraph:
+  definition: "A paragraph is a group of related sentences that focus on one main idea."
+  examples: ["Topic sentence → supporting details → concluding sentence."]
+  link: "https://www.grammar-monster.com/lessons/paragraphs.htm"
+
+transition_words:
+  definition: "Transition words connect ideas and help sentences and paragraphs flow smoothly."
+  examples: ["however", "therefore", "meanwhile", "in addition"]
+  link: "https://www.grammar-monster.com/lessons/transition_words.htm"
+
+declarative_sentence:
+  definition: "A declarative sentence makes a statement and ends with a period."
+  examples: ["The sky is blue.", "I like reading books."]
+
+interrogative_sentence:
+  definition: "An interrogative sentence asks a question and ends with a question mark."
+  examples: ["What time is it?", "Do you like pizza?"]
+  link: "https://www.grammar-monster.com/glossary/interrogative_sentence.htm"
+
+imperative_sentence:
+  definition: "An imperative sentence gives a command or makes a request. It usually ends with a period, but sometimes with an exclamation mark."
+  examples: ["Please close the door.", "Sit down!", "Turn off the lights."]
+  link: "https://www.grammar-monster.com/glossary/imperative_sentence.htm"
+
+exclamatory_sentence:
+  definition: "An exclamatory sentence expresses strong emotion and ends with an exclamation mark."
+  examples: ["Wow, that was amazing!", "I can’t believe we won!"]
+  link: "https://www.grammar-monster.com/glossary/exclamatory_sentence.htm"

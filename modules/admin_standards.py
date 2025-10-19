@@ -1,16 +1,63 @@
-
-
 import streamlit as st
 from datetime import datetime
 from utils.db import SessionLocal, Concept
 from utils.llm_helpers import export_concepts_to_pdf
+from utils.parser_newsletter import parse_newsletter
+from utils.topic_manager import update_topics
+from utils.topic_manager import sync_yaml_to_db, sync_db_to_yaml
+from PIL import Image
+import pytesseract
 import os
 
+
 def show():
+    st.header("Admin - Topic Management")
+    with st.expander("🔄 Sync Options"):
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Sync YAML → Database"):
+                sync_yaml_to_db()
+                st.success("✅ Synced YAML to database")
+        with col2:
+            if st.button("Sync Database → YAML"):
+                sync_db_to_yaml()
+                st.success("✅ Synced database to YAML")
+        st.caption(
+            "Use these buttons to synchronize concepts between the YAML file and the database. "
+            "YAML → Database updates the database from the YAML file, while Database → YAML exports the current database to YAML."
+        )
+
     st.title("🧠 Admin - Weekly Concepts Manager")
-    st.write("Add or review weekly learning topics and vocabulary entries.")
+    st.write("Upload newsletters or add learning topics manually. Supports image OCR and text parsing.")
 
     db = SessionLocal()
+
+    # ---------- Newsletter Upload / OCR ----------
+    st.subheader("📷 Upload or Paste Newsletter")
+    tab1, tab2 = st.tabs(["📸 Upload Image", "📝 Paste Text"])
+
+    with tab1:
+        uploaded_file = st.file_uploader("Upload newsletter image", type=["png", "jpg", "jpeg"])
+        if uploaded_file:
+            image = Image.open(uploaded_file)
+            st.image(image, caption="Uploaded Newsletter Preview", use_container_width=True)
+
+            with st.spinner("🔍 Extracting text with OCR..."):
+                text = pytesseract.image_to_string(image)
+
+            st.text_area("Extracted Text (editable)", value=text, height=250, key="ocr_text")
+
+            if st.button("🧩 Parse & Update Topics (from image)"):
+                topics = parse_newsletter(st.session_state.ocr_text)
+                update_topics(topics)
+                st.success(f"✅ Parsed and updated {len(topics)} topics successfully!")
+
+    with tab2:
+        raw_text = st.text_area("Paste newsletter text here", height=250)
+        if st.button("🧩 Parse & Update Topics (from text)"):
+            topics = parse_newsletter(raw_text)
+            update_topics(topics)
+            st.success(f"✅ Parsed and updated {len(topics)} topics successfully!")
 
     # ---------- Add New Concept ----------
     st.subheader("➕ Add New Concept")
