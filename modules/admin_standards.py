@@ -4,7 +4,7 @@ from utils.db import SessionLocal, Concept
 from utils.llm_helpers import export_concepts_to_pdf
 from utils.parser_newsletter import parse_newsletter
 from utils.topic_manager import update_topics
-from utils.topic_manager import sync_yaml_to_db, sync_db_to_yaml
+from utils.topic_manager import sync_yaml_to_db, sync_db_to_yaml, sync_topics_to_concepts
 from PIL import Image
 import pytesseract
 import os
@@ -13,12 +13,18 @@ import os
 def show():
     st.header("Admin - Topic Management")
     with st.expander("🔄 Sync Options"):
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
-            if st.button("Sync YAML → Database"):
+            if st.button("Sync YAML File → Topics Table"):
                 sync_yaml_to_db()
-                st.success("✅ Synced YAML to database")
+                st.success("✅ Synced YAML to Topics Table")
+
         with col2:
+            if st.button("Sync YAML → Concept Table"):
+                sync_topics_to_concepts()
+                st.success("✅ Synced YAML to Concept Table")
+
+        with col3:
             if st.button("Sync Database → YAML"):
                 sync_db_to_yaml()
                 st.success("✅ Synced database to YAML")

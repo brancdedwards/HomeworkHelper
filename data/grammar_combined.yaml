@@ -1,0 +1,472 @@
+
+
+
+
+adjective:
+  category: parts_of_speech
+  question_focus: "Which word describes a noun?"
+  definition: "An adjective modifies a noun or pronoun, describing quality, quantity, or state."
+  examples: "The *blue* sky, a *large* dog, three *happy* children."
+  link: "https://www.grammar-monster.com/glossary/adjectives.htm"
+
+adverb:
+  category: parts_of_speech
+  question_focus: "Which word tells how, when, where, or to what extent?"
+  definition: "An adverb modifies a verb, adjective, or another adverb, showing manner, time, place, or degree."
+  examples: "He ran *quickly*, she arrived *early*, they live *nearby*."
+  link: "https://www.grammar-monster.com/glossary/adverbs.htm"
+
+article:
+  category: parts_of_speech
+  question_focus: "Which article fits this noun?"
+  definition: "Articles (a, an, the) define nouns as specific or unspecific."
+  examples: "*A* cat, *an* apple, *the* car."
+  link: "https://www.grammar-monster.com/glossary/articles.htm"
+
+fragment:
+  category: sentence_structure
+  question_focus: "Is this a complete sentence or a fragment?"
+  definition: "A sentence fragment is an incomplete thought missing a subject, verb, or both."
+  examples: "Because I was late. (fragment)"
+  link: "https://www.grammar-monster.com/glossary/sentence_fragments.htm"
+
+homonym:
+  category: vocabulary
+  question_focus: "Which words sound or look alike but differ in meaning?"
+  definition: "Homonyms are words with the same spelling or pronunciation but different meanings."
+  examples: "Bear (animal) vs. bear (to carry)."
+  link: "https://www.grammar-monster.com/glossary/homonyms.htm"
+
+paragraph:
+  category: sentence_structure
+  question_focus: "What makes this group of sentences a paragraph?"
+  definition: "A paragraph is a group of related sentences developing one idea."
+  examples: "A paragraph begins with a topic sentence followed by supporting details."
+  link: "https://www.grammar-monster.com/glossary/paragraphs.htm"
+
+transition_words:
+  category: writing_quality
+  question_focus: "Which transition connects ideas smoothly?"
+  definition: "Transition words link ideas and show relationships such as cause, contrast, or sequence."
+  examples: "However, therefore, meanwhile, consequently."
+  link: "https://www.grammar-monster.com/glossary/transition_words.htm"
+
+conjunction:
+  category: parts_of_speech
+  question_focus: "Which word joins words or clauses?"
+  definition: "A conjunction connects words, phrases, or clauses. Common conjunctions include 'and', 'but', 'or', 'nor', 'for', 'so', and 'yet'."
+  examples: "I want tea *and* coffee, She is tired *but* happy."
+  link: "https://www.grammarly.com/blog/conjunction/"
+
+interjection:
+  category: parts_of_speech
+  question_focus: "Which word shows sudden feeling or emotion?"
+  definition: "An interjection is a word or phrase that expresses sudden or strong feeling or emotion, often standing alone."
+  examples: "*Wow!*, *Oh no!*, *Hurray!*"
+  link: "https://www.grammarly.com/blog/interjection/"
+
+noun:
+  category: parts_of_speech
+  question_focus: "Which word is a person, place, thing, or idea?"
+  definition: "A noun is a word that names a person, place, thing, or idea."
+  examples: "*Teacher*, *city*, *book*, *freedom*."
+  link: "https://www.grammarly.com/blog/noun/"
+
+preposition:
+  category: parts_of_speech
+  question_focus: "Which word shows a relationship (like in, on, under, after)?"
+  definition: "A preposition shows the relationship between a noun or pronoun and other words in a sentence, often indicating location, direction, or time."
+  examples: "The book is *on* the table, She walked *to* the store."
+  link: "https://www.grammarly.com/blog/preposition/"
+
+pronoun:
+  category: parts_of_speech
+  question_focus: "Which word takes the place of a noun?"
+  definition: "A pronoun replaces a noun to avoid repetition and simplify sentences."
+  examples: "*He*, *she*, *it*, *they*."
+  link: "https://www.grammarly.com/blog/pronoun/"
+
+verb:
+  category: parts_of_speech
+  question_focus: "Which word shows action or state of being?"
+  definition: "A verb expresses an action, occurrence, or state of being."
+  examples: "*Run*, *is*, *seem*, *jumped*."
+  link: "https://www.grammarly.com/blog/verb/"
+
+modifier:
+  category: grammar_mechanics
+  question_focus: "Which word or phrase modifies (describes) another word?"
+  definition: "A modifier is a word, phrase, or clause that provides description in sentences, clarifying or limiting another word."
+  examples: "The *very* tall man, *Running quickly*, she arrived."
+  link: "https://writingcenter.unc.edu/tips-and-tools/modifiers/"
+
+subject:
+  category: sentence_structure
+  question_focus: "What is the subject (who or what the sentence is about)?"
+  definition: "The subject is the person, place, thing, or idea that the sentence is about."
+  examples: "*The dog* barks, *She* runs fast."
+  link: "https://www.grammarly.com/blog/subject/"
+
+predicate:
+  category: sentence_structure
+  question_focus: "What is the predicate (what the subject does or is)?"
+  definition: "The predicate tells what the subject does or is; it contains the verb and all information related to the action or state."
+  examples: "The dog *barks loudly*, She *is happy*."
+  link: "https://www.grammarly.com/blog/predicate/"
+
+clause:
+  category: sentence_structure
+  question_focus: "Is this an independent or dependent clause?"
+  definition: "A clause is a group of words containing a subject and a verb. An independent clause can stand alone as a sentence; a dependent clause cannot."
+  examples: "*I ran* (independent), *Because I was late* (dependent)."
+  link: "https://www.grammarly.com/blog/clause/"
+
+phrase:
+  category: sentence_structure
+  question_focus: "Which group of words is a phrase (no subject or verb)?"
+  definition: "A phrase is a group of words that act as a single part of speech but do not contain both a subject and a verb."
+  examples: "*Under the table*, *running quickly*."
+  link: "https://www.grammarly.com/blog/phrase/"
+
+simple_sentence:
+  category: sentence_structure
+  question_focus: "Is this a simple sentence (one independent clause)?"
+  definition: "A simple sentence contains one independent clause and expresses a complete thought."
+  examples: "She runs fast."
+  link: "https://www.grammarly.com/blog/simple-sentence/"
+
+compound_sentence:
+  category: sentence_structure
+  question_focus: "What conjunction joins the two independent clauses?"
+  definition: "A compound sentence contains two or more independent clauses joined by a coordinating conjunction or semicolon."
+  examples: "I wanted to go, *but* it was raining."
+  link: "https://www.grammarly.com/blog/compound-sentence/"
+
+complex_sentence:
+  category: sentence_structure
+  question_focus: "What makes this a complex sentence (subordinate clause)?"
+  definition: "A complex sentence contains one independent clause and at least one dependent (subordinate) clause."
+  examples: "Because it was raining, I stayed inside."
+  link: "https://www.grammarly.com/blog/complex-sentence/"
+
+compound_complex_sentence:
+  category: sentence_structure
+  question_focus: "What elements make this a compound-complex sentence?"
+  definition: "A compound-complex sentence has at least two independent clauses and at least one dependent clause."
+  examples: "I went home, and she stayed, because it was late."
+  link: "https://www.grammarly.com/blog/compound-complex-sentence/"
+
+sentence_fragment:
+  category: sentence_structure
+  question_focus: "Is this a complete sentence or a fragment?"
+  definition: "A sentence fragment is an incomplete sentence missing a subject, verb, or complete thought."
+  examples: "Because I was late. (fragment)"
+  link: "https://www.grammarly.com/blog/sentence-fragment/"
+
+run_on_sentence:
+  category: sentence_structure
+  question_focus: "How can this run-on sentence be corrected?"
+  definition: "A run-on sentence occurs when two or more independent clauses are joined without proper punctuation or conjunctions."
+  examples: "I went home I was tired. (run-on)"
+  link: "https://www.grammarly.com/blog/run-on-sentence/"
+
+subject_verb_agreement:
+  category: grammar_mechanics
+  question_focus: "Do the subject and verb agree in number?"
+  definition: "Subject-verb agreement means the subject and verb must both be singular or both be plural."
+  examples: "She *runs* fast. They *run* fast."
+  link: "https://www.grammarly.com/blog/subject-verb-agreement/"
+
+verb_tense:
+  category: grammar_mechanics
+  question_focus: "Which verb tense is used or should be used here?"
+  definition: "Verb tense shows the time of the action or state of being (past, present, future)."
+  examples: "She *runs* (present), She *ran* (past), She *will run* (future)."
+  link: "https://www.grammarly.com/blog/verb-tenses/"
+
+capitalization:
+  category: grammar_mechanics
+  question_focus: "Which words should be capitalized in this sentence?"
+  definition: "Capitalization rules govern the use of uppercase letters at the beginning of sentences, proper nouns, and titles."
+  examples: "I live in *New York*."
+  link: "https://www.grammarly.com/blog/capitalization/"
+
+punctuation:
+  category: punctuation
+  question_focus: "Which punctuation mark is needed and where?"
+  definition: "Punctuation marks clarify meaning by indicating pauses, stops, and sentence structure."
+  examples: "Use commas, periods, question marks, etc."
+  link: "https://www.grammarly.com/blog/punctuation/"
+
+period:
+  category: punctuation
+  question_focus: "Where should a period be placed?"
+  definition: "A period marks the end of a declarative sentence or statement."
+  examples: "She runs fast."
+  link: "https://www.grammarly.com/blog/period/"
+
+comma:
+  category: punctuation
+  question_focus: "Where should a comma be placed?"
+  definition: "A comma separates elements in a sentence to clarify meaning, such as items in a list or clauses."
+  examples: "I bought apples, oranges, and bananas."
+  link: "https://www.grammarly.com/blog/comma/"
+
+semicolon:
+  category: punctuation
+  question_focus: "When should a semicolon join two independent clauses?"
+  definition: "A semicolon joins closely related independent clauses without a conjunction."
+  examples: "I went home; it was late."
+  link: "https://www.grammarly.com/blog/semicolon/"
+
+colon:
+  category: punctuation
+  question_focus: "When should a colon introduce a list or explanation?"
+  definition: "A colon introduces a list, explanation, or quotation after an independent clause."
+  examples: "She bought three fruits: apples, oranges, and bananas."
+  link: "https://www.grammarly.com/blog/colon/"
+
+apostrophe:
+  category: punctuation
+  question_focus: "Which word uses an apostrophe correctly?"
+  definition: "An apostrophe shows possession or forms contractions."
+  examples: "John's book, can't."
+  link: "https://www.grammarly.com/blog/apostrophe/"
+
+quotation_marks:
+  category: punctuation
+  question_focus: "What punctuation correctly shows quoted speech?"
+  definition: "Quotation marks are used to show exact spoken or written words."
+  examples: "She said, \"Hello.\""
+  link: "https://www.grammarly.com/blog/quotation-marks/"
+
+question_mark:
+  category: punctuation
+  question_focus: "Which sentence correctly uses a question mark?"
+  definition: "A question mark ends a direct question."
+  examples: "Are you coming?"
+  link: "https://www.grammarly.com/blog/question-mark/"
+
+exclamation_point:
+  category: punctuation
+  question_focus: "Which sentence correctly uses an exclamation point?"
+  definition: "An exclamation point shows strong feeling or emphasis."
+  examples: "Watch out!"
+  link: "https://www.grammarly.com/blog/exclamation-point/"
+
+parentheses:
+  category: punctuation
+  question_focus: "Where should parentheses be used correctly?"
+  definition: "Parentheses enclose additional information or clarifications."
+  examples: "He finally answered (after taking five minutes)."
+  link: "https://www.grammarly.com/blog/parentheses/"
+
+hyphen_dash:
+  category: punctuation
+  question_focus: "Should a hyphen or a dash be used here?"
+  definition: "A hyphen connects words or parts of words; a dash indicates a break or range."
+  examples: "Well-known author (hyphen), I will go — if you want (dash)."
+  link: "https://www.grammarly.com/blog/hyphen-dash/"
+
+clarity:
+  category: writing_quality
+  question_focus: "Which revision makes this sentence clearer?"
+  definition: "Clarity means expressing ideas in a straightforward and unambiguous way."
+  examples: "Original: The man who was tall and had a hat walked quickly. Revised: The tall man with a hat walked quickly."
+  link: "https://writingcenter.unc.edu/tips-and-tools/clarity/"
+
+coherence:
+  category: writing_quality
+  question_focus: "Which transition or order makes the paragraph more coherent?"
+  definition: "Coherence means ideas flow logically and smoothly from one to another."
+  examples: "Using transitions like 'however', 'therefore', 'firstly'."
+  link: "https://writingcenter.unc.edu/tips-and-tools/coherence/"
+
+sentence_variety:
+  category: writing_quality
+  question_focus: "How can this writing show more sentence variety?"
+  definition: "Sentence variety involves using different sentence types and lengths to improve readability."
+  examples: "Mix simple, compound, and complex sentences."
+  link: "https://writingcenter.unc.edu/tips-and-tools/sentence-structure/"
+
+transitions:
+  category: writing_quality
+  question_focus: "Which transition connects these ideas best?"
+  definition: "Transitions are words or phrases that connect ideas and show relationships."
+  examples: "However, therefore, meanwhile."
+  link: "https://writingcenter.unc.edu/tips-and-tools/transitions/"
+
+word_choice:
+  category: writing_quality
+  question_focus: "Which word best fits the meaning of this sentence?"
+  definition: "Word choice is selecting the most precise and appropriate words to convey meaning."
+  examples: "Use 'happy' instead of 'good' for emotion."
+  link: "https://writingcenter.unc.edu/tips-and-tools/word-choice/"
+
+conciseness:
+  category: writing_quality
+  question_focus: "Which revision removes wordiness without changing the meaning?"
+  definition: "Conciseness means expressing ideas clearly without unnecessary words."
+  examples: "Original: Due to the fact that -> Revised: Because."
+  link: "https://writingcenter.unc.edu/tips-and-tools/conciseness/"
+
+redundancy:
+  category: writing_quality
+  question_focus: "Which words are redundant and can be removed?"
+  definition: "Redundancy is the use of unnecessary repetition or words."
+  examples: "Advance planning (planning is enough)."
+  link: "https://writingcenter.unc.edu/tips-and-tools/redundancy/"
+
+tone:
+  category: writing_quality
+  question_focus: "What tone does this sentence convey, and is it appropriate?"
+  definition: "Tone is the author's attitude toward the subject or audience."
+  examples: "Formal, informal, sarcastic, serious."
+  link: "https://writingcenter.unc.edu/tips-and-tools/tone/"
+
+active_vs_passive_voice:
+  category: writing_quality
+  question_focus: "Is the sentence active or passive, and should it be revised?"
+  definition: "Active voice has the subject performing the action; passive voice has the subject receiving the action."
+  examples: "Active: She wrote the book. Passive: The book was written by her."
+  link: "https://writingcenter.unc.edu/tips-and-tools/active-and-passive-voice/"
+
+parallel_structure:
+  category: writing_quality
+  question_focus: "Which revision fixes the faulty parallelism?"
+  definition: "Parallel structure means using the same pattern of words to show equal importance."
+  examples: "Correct: She likes hiking, swimming, and biking."
+  link: "https://writingcenter.unc.edu/tips-and-tools/parallel-structure/"
+
+simile:
+  category: literary_devices
+  question_focus: "Which phrase is a simile in this sentence?"
+  definition: "A simile compares two things using 'like' or 'as'."
+  examples: "He is *as brave as a lion*."
+  link: "https://literarydevices.net/simile/"
+
+metaphor:
+  category: literary_devices
+  question_focus: "Which phrase is a metaphor in this sentence?"
+  definition: "A metaphor directly compares two things without using 'like' or 'as'."
+  examples: "Time is a thief."
+  link: "https://literarydevices.net/metaphor/"
+
+personification:
+  category: literary_devices
+  question_focus: "What object or idea is given human qualities?"
+  definition: "Personification gives human traits to non-human things."
+  examples: "The wind *whispered* through the trees."
+  link: "https://literarydevices.net/personification/"
+
+alliteration:
+  category: literary_devices
+  question_focus: "Which phrase contains alliteration?"
+  definition: "Alliteration is the repetition of initial consonant sounds in nearby words."
+  examples: "She sells sea shells by the sea shore."
+  link: "https://literarydevices.net/alliteration/"
+
+onomatopoeia:
+  category: literary_devices
+  question_focus: "Which word is an example of onomatopoeia?"
+  definition: "Onomatopoeia is a word that imitates a sound."
+  examples: "Buzz, bang, hiss."
+  link: "https://literarydevices.net/onomatopoeia/"
+
+hyperbole:
+  category: literary_devices
+  question_focus: "Which phrase is an example of hyperbole?"
+  definition: "Hyperbole is an exaggerated statement not meant to be taken literally."
+  examples: "I'm so hungry I could eat a horse."
+  link: "https://literarydevices.net/hyperbole/"
+
+idiom:
+  category: vocabulary
+  question_focus: "Which option is an idiom that matches the meaning?"
+  definition: "An idiom is a phrase whose meaning is different from the literal meanings of its words."
+  examples: "Break the ice, hit the sack."
+  link: "https://www.merriam-webster.com/words-at-play/idioms-meanings-examples"
+
+synonym:
+  category: vocabulary
+  question_focus: "What is a synonym for '{word}'?"
+  definition: "A synonym is a word that has the same or nearly the same meaning as another word."
+  examples: "Happy - joyful, glad."
+  link: "https://www.merriam-webster.com/thesaurus"
+
+antonym:
+  category: vocabulary
+  question_focus: "What is an antonym for '{word}'?"
+  definition: "An antonym is a word that means the opposite of another word."
+  examples: "Hot - cold, big - small."
+  link: "https://www.merriam-webster.com/thesaurus"
+
+homophone:
+  category: vocabulary
+  question_focus: "Which word sounds the same but has a different meaning/spelling?"
+  definition: "Homophones are words that sound alike but have different meanings and spellings."
+  examples: "To, two, too."
+  link: "https://www.grammarly.com/blog/homophone/"
+
+root_word:
+  category: vocabulary
+  question_focus: "What is the root word and how does it affect meaning?"
+  definition: "A root word is the base part of a word that carries the core meaning."
+  examples: "Unhappy: root word 'happy'."
+  link: "https://www.vocabulary.com/articles/wordroutes/root-words/"
+
+prefix:
+  category: vocabulary
+  question_focus: "What does the prefix in '{word}' mean?"
+  definition: "A prefix is a group of letters added to the beginning of a word to change its meaning."
+  examples: "Un- means not, as in 'unhappy'."
+  link: "https://www.vocabulary.com/articles/wordroutes/prefixes/"
+
+suffix:
+  category: vocabulary
+  question_focus: "What does the suffix in '{word}' mean?"
+  definition: "A suffix is a group of letters added to the end of a word to change its form or meaning."
+  examples: "-ful means full of, as in 'joyful'."
+  link: "https://www.vocabulary.com/articles/wordroutes/suffixes/"
+
+context_clues:
+  category: vocabulary
+  question_focus: "What does '{word}' mean based on context clues?"
+  definition: "Context clues are hints found within a sentence or paragraph that help define unfamiliar words."
+  examples: "The *arid* desert was dry and barren."
+  link: "https://www.vocabulary.com/articles/wordroutes/context-clues/"
+
+multiple_meanings:
+  category: vocabulary
+  question_focus: "Which meaning of '{word}' fits this sentence?"
+  definition: "Some words have multiple meanings; context helps determine the correct one."
+  examples: "Bat (animal) or bat (sports equipment)."
+  link: "https://www.merriam-webster.com/words-at-play/words-with-multiple-meanings"
+
+declarative_sentence:
+  category: sentence_type
+  question_focus: "Is this sentence declarative (statement)?"
+  definition: "A declarative sentence makes a statement and ends with a period."
+  examples: "The sky is blue."
+  link: "https://www.grammarly.com/blog/declarative-sentence/"
+
+interrogative_sentence:
+  category: sentence_type
+  question_focus: "Is this sentence interrogative (question)?"
+  definition: "An interrogative sentence asks a question and ends with a question mark."
+  examples: "Is the sky blue?"
+  link: "https://www.grammarly.com/blog/interrogative-sentence/"
+
+imperative_sentence:
+  category: sentence_type
+  question_focus: "Is this sentence imperative (command/request)?"
+  definition: "An imperative sentence gives a command or makes a request."
+  examples: "Please sit down."
+  link: "https://www.grammarly.com/blog/imperative-sentence/"
+
+exclamatory_sentence:
+  category: sentence_type
+  question_focus: "Is this sentence exclamatory (strong feeling)?"
+  definition: "An exclamatory sentence expresses strong feeling and ends with an exclamation point."
+  examples: "What a beautiful day!"
+  link: "https://www.grammarly.com/blog/exclamatory-sentence/"

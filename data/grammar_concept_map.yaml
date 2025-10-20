@@ -1,0 +1,128 @@
+grammar:
+  grammar_mechanics:
+    parts_of_speech:
+      question_focus: "What part of speech is the word '{word}' in the sentence?"
+    nouns:
+      question_focus: "Is '{word}' a common, proper, or abstract noun?"
+    pronouns:
+      question_focus: "Which word is a pronoun in this sentence?"
+    verbs:
+      question_focus: "What is the main verb in this sentence?"
+    adjectives_and_adverbs:
+      question_focus: "What kind of word describes the noun or verb?"
+    prepositions:
+      question_focus: "Which word shows the relationship between a noun and another word in the sentence?"
+    conjunctions:
+      question_focus: "What word joins these two ideas together?"
+    interjections:
+      question_focus: "Which word shows strong emotion or surprise?"
+    subject_verb_agreement:
+      question_focus: "Does the subject and verb agree in number?"
+    verb_tenses:
+      question_focus: "Which verb tense is used in this sentence?"
+    capitalization:
+      question_focus: "Which words should be capitalized in this sentence?"
+
+  sentence_structure:
+    simple_sentences:
+      question_focus: "Is this a simple sentence or a more complex one?"
+    compound_sentences:
+      question_focus: "What conjunction joins the clauses in this compound sentence?"
+    complex_sentences:
+      question_focus: "What makes this a complex sentence?"
+    compound_complex_sentences:
+      question_focus: "What combination of clauses makes this a compound-complex sentence?"
+    sentence_fragments:
+      question_focus: "Is this a complete sentence or a fragment?"
+    run_on_sentences:
+      question_focus: "How can this run-on sentence be corrected?"
+    clauses:
+      question_focus: "Is this an independent or dependent clause?"
+    modifiers:
+      question_focus: "Which phrase or word modifies the noun or verb in this sentence?"
+    parallel_structure:
+      question_focus: "Are these items written in parallel structure?"
+
+  punctuation:
+    periods:
+      question_focus: "Where should a period be placed in this sentence?"
+    commas:
+      question_focus: "Where should a comma be placed in this sentence?"
+    semicolons:
+      question_focus: "When should a semicolon be used to join two independent clauses?"
+    colons:
+      question_focus: "When is a colon used to introduce a list or explanation?"
+    question_marks:
+      question_focus: "Which sentence correctly uses a question mark?"
+    exclamation_points:
+      question_focus: "Which sentence correctly uses an exclamation point?"
+    quotation_marks:
+      question_focus: "What punctuation correctly shows a quote in this sentence?"
+    apostrophes:
+      question_focus: "Which word uses an apostrophe correctly?"
+    parentheses:
+      question_focus: "When should parentheses be used to add extra information?"
+    hyphens_and_dashes:
+      question_focus: "When should a hyphen or dash be used?"
+
+  writing_quality:
+    clarity:
+      question_focus: "Which revision makes this sentence clearer?"
+    coherence:
+      question_focus: "Which transition makes this paragraph more coherent?"
+    conciseness:
+      question_focus: "Which version avoids unnecessary words?"
+    sentence_variety:
+      question_focus: "How can this writing show more sentence variety?"
+    transition:
+      question_focus: "Which transition word connects these ideas best?"
+    tone:
+      question_focus: "Which sentence best matches a formal tone?"
+    word_choice:
+      question_focus: "Which word best fits the meaning of this sentence?"
+    active_vs_passive_voice:
+      question_focus: "Is this sentence written in active or passive voice?"
+    redundancy:
+      question_focus: "Which phrase repeats information unnecessarily?"
+
+  literary_devices:
+    similes:
+      question_focus: "Which phrase is a simile in this sentence?"
+    metaphors:
+      question_focus: "Which phrase is a metaphor in this sentence?"
+    personification:
+      question_focus: "What object or idea is given human qualities?"
+    alliteration:
+      question_focus: "Which phrase contains alliteration?"
+    onomatopoeia:
+      question_focus: "Which word is an example of onomatopoeia?"
+    hyperbole:
+      question_focus: "Which sentence uses exaggeration for effect?"
+    idioms:
+      question_focus: "Which phrase is an example of an idiom?"
+
+  vocabulary:
+    synonyms:
+      question_focus: "What is a synonym for '{word}'?"
+    antonyms:
+      question_focus: "What is an antonym for '{word}'?"
+    homophones:
+      question_focus: "Which word sounds the same but has a different meaning?"
+    prefixes_and_suffixes:
+      question_focus: "What does the prefix or suffix in '{word}' mean?"
+    root_words:
+      question_focus: "What is the base or root word of '{word}'?"
+    context_clues:
+      question_focus: "What does the word '{word}' mean based on context clues?"
+    multiple_meanings:
+      question_focus: "Which meaning of '{word}' fits this sentence best?"
+
+  sentence_type:
+    declarative_sentences:
+      question_focus: "What type of sentence is this — declarative, interrogative, imperative, or exclamatory?"
+    interrogative_sentences:
+      question_focus: "What punctuation shows this is a question?"
+    imperative_sentences:
+      question_focus: "What makes this an imperative sentence?"
+    exclamatory_sentences:
+      question_focus: "What punctuation shows this is an exclamatory sentence?"

@@ -9,6 +9,8 @@ from openai import OpenAI
 import os, yaml, re, json
 from dotenv import load_dotenv
 import streamlit as st
+# --- Import the new concept map loader ---
+from utils.concept_map_loader import load_concept_map, detect_category_for_topic, get_question_focus
 
 # ---------- Setup ----------
 load_dotenv()
@@ -302,25 +304,66 @@ def get_active_topics(subject="grammar"):
 
 def generate_sentences_from_topics(conn=None, n=3):
     """
-    Pulls active topics from DB, asks OpenAI for sentences for each.
+    Pulls active topics from DB, detects their categories using the concept map loader,
+    and asks OpenAI for sentences for each, possibly customizing prompts per category.
     """
+    # --- Integration point: load concept map for category detection ---
     from utils.db import get_connection
+    import random
     if conn is None or not hasattr(conn, "cursor"):
         conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT name FROM topics WHERE active = 1;")
     active_topics = [row[0] for row in cursor.fetchall()]
 
+    # Load concept map for category detection
+    concept_map = load_concept_map()
+
+    # Randomly select up to n topics
+    selected_topics = random.sample(active_topics, min(n, len(active_topics)))
+
     sentences = []
 
-    for topic in active_topics:
-        prompt = f"""
-            "You are generating short practice sentences for a 5th grader. "
-            f"Write exactly {n} simple, self-contained sentences (8–14 words each) in the context of the {topic}. "
-            "Use everyday vocabulary. No dialogue, no quoted speech, no numbers or bullets. "
-            "Return ONLY valid JSON: an array of strings, like [\"The cat sat on the warm windowsill.\", ...]. "
-            "Do not include any preface or explanation."
-        """
+    for topic in selected_topics:
+        st.write(f"DEBUG from llm_helpers (b4 detect category): Topic: {topic}")
+        category = detect_category_for_topic(topic, subject="grammar")
+        st.write(f"DEBUG from llm_helpers: Topic: {topic}, Category: {category}")
+        question_focus = get_question_focus(topic, subject="grammar")
+        st.write(f"DEBUG Topic: {topic}, Category: {category}, Question Focus: {question_focus}")
+        if question_focus:
+            prompt = (
+                f"Write exactly {n} short, self-contained sentences (8–14 words each) "
+                f"that help a 5th grader practice the concept '{topic}' ({category}). "
+                f"Use this question focus to guide how they're structured: '{question_focus}'. "
+                "Use everyday vocabulary. No dialogue, no quoted speech, no numbers or bullets. "
+                "Return ONLY valid JSON: an array of strings, like [\"The cat sat on the warm windowsill.\", ...]. "
+                "Do not include any preface or explanation."
+            )
+        elif category and category.lower() == "vocabulary":
+            prompt = (
+                f"Write exactly {n} simple sentences (8–14 words each) using the word '{topic}' in context. "
+                "The sentences should clearly show the meaning of the word to a 5th grader. "
+                "No dialogue, no quoted speech, no numbers or bullets. "
+                "Return ONLY valid JSON: an array of strings, like [\"The cat sat on the warm windowsill.\", ...]. "
+                "Do not include any preface or explanation."
+            )
+        elif category:
+            prompt = (
+                f"Write exactly {n} simple, self-contained sentences (8–14 words each) "
+                f"that demonstrate the concept of '{topic}' ({category}) for a 5th grader. "
+                "Use everyday vocabulary. No dialogue, no quoted speech, no numbers or bullets. "
+                "Return ONLY valid JSON: an array of strings, like [\"The cat sat on the warm windowsill.\", ...]. "
+                "Do not include any preface or explanation."
+            )
+        else:
+            prompt = (
+                f"You are generating short practice sentences for a 5th grader. "
+                f"Write exactly {n} simple, self-contained sentences (8–14 words each) "
+                f"about or including the topic '{topic}'. "
+                "Use everyday vocabulary. No dialogue, no quoted speech, no numbers or bullets. "
+                "Return ONLY valid JSON: an array of strings, like [\"The cat sat on the warm windowsill.\", ...]. "
+                "Do not include any preface or explanation."
+            )
 
         text = call_llm(prompt, temperature=0.4)
 
@@ -357,23 +400,27 @@ def generate_sentences_from_topics(conn=None, n=3):
                 return False
             return True
 
-        sentences = [s for s in candidates if good(s)]
+        topic_sentences = [s for s in candidates if good(s)]
 
         # If we still don't have enough, truncate/extend gracefully
-        if len(sentences) > n:
-            sentences = sentences[:n]
-        elif len(sentences) < n:
+        if len(topic_sentences) > n:
+            topic_sentences = topic_sentences[:n]
+        elif len(topic_sentences) < n:
             # Duplicate last items to meet the requested count (better than failing UI)
-            while sentences and len(sentences) < n:
-                sentences.append(sentences[-1])
+            while topic_sentences and len(topic_sentences) < n:
+                topic_sentences.append(topic_sentences[-1])
             # If completely empty, give safe placeholders
-            if not sentences:
-                sentences = [
+            if not topic_sentences:
+                topic_sentences = [
                     "The cat slept on the sunny porch.",
                     "A blue bird landed on the fence.",
                     "We packed snacks for the short hike.",
                 ][:n]
-        return sentences
+        sentences.extend(topic_sentences)
+
+    # After collecting all, limit the total count to n
+    sentences = sentences[:n]
+    return sentences
 # ---------- PDF Export Function ----------
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet

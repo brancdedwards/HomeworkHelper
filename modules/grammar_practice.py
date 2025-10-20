@@ -11,7 +11,7 @@ def show():
     num_sentences = st.slider("How many sentences do you want to practice with?", 1, 10, 3)
     if st.button("🔄 Generate Sentences"):
         with st.spinner("Generating sentences..."):
-            sentences = generate_sentences_from_topics(num_sentences)
+            sentences = generate_sentences_from_topics(n=num_sentences)
             if not sentences:
                 st.error("Failed to generate sentences. Please check your API or LLM settings.")
                 return

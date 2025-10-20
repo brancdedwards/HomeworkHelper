@@ -1,51 +1,122 @@
-import datetime
-import os
-import yaml
+import datetime, os, yaml, sys, streamlit as st, sqlite3
 from datetime import datetime
 
-import sqlite3
+
 DB_PATH = "data/homework_helper.db"
 # DB_PATH = os.path.join(os.path.dirname(__file__), "..", "/data/homework_helper.db")
 def get_connection():
     return sqlite3.connect(DB_PATH)
 YAML_PATH = "data/grammar_hints.yaml"
 
+def sync_topics_to_concepts():
+    """
+    Copy active topics from the topics table into the concepts table if not already present.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # Select all active topics
+    cur.execute("SELECT name, subject FROM topics")
+    topics = cur.fetchall()
+    inserted = 0
+    skipped = 0
+    for name, subject in topics:
+        # Check if concept exists with same subject and topic
+        cur.execute(
+            "SELECT id FROM concepts WHERE subject = ? AND topic = ?",
+            (subject, name)
+        )
+        if cur.fetchone():
+            print(f"⏩ Skipped (already exists): subject='{subject}', topic='{name}'")
+            skipped += 1
+            continue
+        # Insert new concept
+        cur.execute(
+            """
+            INSERT INTO concepts (date_start, subject, topic, type, notes, created_at)
+            VALUES (CURRENT_DATE, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """,
+            (subject, name, "auto_sync", "Auto-synced from topics")
+        )
+        print(f"✅ Inserted: subject='{subject}', topic='{name}'")
+        inserted += 1
+    conn.commit()
+    conn.close()
+    print(f"Summary: Inserted: {inserted}, Skipped: {skipped}")
+
+
 
 def sync_yaml_to_db():
-    import streamlit as st
     st.write("🔍 Using database:", os.path.abspath(DB_PATH))
+    """Sync topics from a YAML file into the SQLite topics table."""
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    _YAML_PATH = "data/grammar_combined.yaml"
 
-    """Load YAML topics and sync to SQLite, preserving dynamic metadata."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    print("🔍 Using database:", os.path.abspath(DB_PATH))
     # Load YAML
-    st.write(YAML_PATH)
-    with open(YAML_PATH, "r") as f:
-        yaml_data = yaml.safe_load(f)
+    with open(_YAML_PATH, "r") as f:
+        topics = yaml.safe_load(f)
 
-    for name, content in yaml_data.items():
-        meta = content.get("meta", {})
-        subject = meta.get("subject", "grammar")
-        grade = meta.get("grade_level", 5)
-        active = int(meta.get("active", False))
-        last_seen = meta.get("last_seen_date", None)
-        updated_at = datetime.now()
+    print(f"Loaded {len(topics)} topics from YAML")
 
-        cursor.execute("""
-            INSERT INTO topics (name, subject, grade_level, active, last_seen_date)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(name) DO UPDATE SET
-                subject = excluded.subject,
-                grade_level = excluded.grade_level,
-                active = excluded.active,
-                last_seen_date = excluded.last_seen_date,
-                updated_at = excluded.updated_at
-        """, (name, subject, grade, active, last_seen))
+    inserted, updated, skipped = 0, 0, 0
+
+    for topic_name, details in topics.items():
+        subject = "grammar"  # Adjust as needed
+        now = datetime.now().isoformat()
+
+        # Check if topic exists
+        cur.execute("SELECT id FROM topics WHERE name = ?", (topic_name,))
+        result = cur.fetchone()
+
+        if result:
+            # Update
+            cur.execute("""
+                        UPDATE topics
+                        SET subject        = ?,
+                            grade_level    = ?,
+                            active         = 0,
+                            last_seen_date = ?,
+                            updated_at     = ?
+                        WHERE id = ?
+                        """, (subject, 5, now, now, result[0]))
+            updated += 1
+            print(f"🔄 Updated: {topic_name}")
+        else:
+            # Insert
+            cur.execute("""
+                        INSERT INTO topics (name, subject, grade_level, active, last_seen_date, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """, (topic_name, subject, None, 1, now, now))
+            inserted += 1
+            print(f"✅ Inserted: {topic_name}")
+
+        # Sync to concept_map as well
+        cur.execute("SELECT id FROM concept_map WHERE LOWER(topic) = LOWER(?)", (topic_name,))
+        concept_exists = cur.fetchone()
+        if concept_exists:
+            cur.execute("""
+                UPDATE concept_map
+                SET category = ?, question_focus = ?, subject = ?
+                WHERE id = ?
+            """, ("general", details.get("question_focus", ""), subject, concept_exists[0]))
+        else:
+            cur.execute("""
+                INSERT INTO concept_map (subject, category, topic, question_focus)
+                VALUES (?, ?, ?, ?)
+            """, (subject, "general", topic_name, details.get("question_focus", "")))
 
     conn.commit()
     conn.close()
-    print("✅ YAML topics synced to database successfully.")
+
+    print(f"\nSummary:")
+    print(f"✅ Inserted: {inserted}")
+    print(f"🔄 Updated: {updated}")
+    print(f"⚠️ Skipped: {skipped}")
+
+
+# Example run:
+# sync_yaml_to_topics("data/grammar_combined.yaml", "data/homework_helper.db")
 
 def sync_db_to_yaml():
     """Synchronize metadata from the SQLite database back to YAML files."""
@@ -146,7 +217,7 @@ def update_topics(parsed_topics, yaml_dir="data/"):
             yaml.safe_dump(data, f, sort_keys=False)
 
 if __name__ == "__main__":
-    import sys
+
     direction = sys.argv[1] if len(sys.argv) > 1 else None
 
     if direction == "db_to_yaml":
