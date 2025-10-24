@@ -13,6 +13,49 @@ Base = declarative_base()
 def get_connection():
     return sqlite3.connect(DB_PATH)
 
+def get_prompt_template(category: str, topic: str = None):
+    """
+    Retrieve a prompt_template from the prompts table.
+    Falls back to category-only match if topic not found.
+    """
+    from utils.db import get_connection
+    conn = get_connection()
+    cur = conn.cursor()
+    if topic:
+        cur.execute("""
+            SELECT prompt_template 
+            FROM prompts 
+            WHERE LOWER(category) = LOWER(?) 
+              AND LOWER(topic) = LOWER(?)
+            LIMIT 1;
+        """, (category, topic))
+        row = cur.fetchone()
+        if row:
+            return row[0]
+
+    # fallback: just category
+    cur.execute("""
+        SELECT prompt_template 
+        FROM prompts 
+        WHERE LOWER(category) = LOWER(?) 
+        ORDER BY id DESC LIMIT 1;
+    """, (category,))
+    row = cur.fetchone()
+    return row[0] if row else None
+
+def get_prompt_for_topic(conn, category, topic):
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT prompt_template, example
+        FROM prompts
+        WHERE LOWER(category) = LOWER(?) AND LOWER(topic) = LOWER(?)
+        LIMIT 1;
+    """, (category, topic))
+    row = cursor.fetchone()
+    if not row:
+        return None, None
+    return row[0], row[1]
+
 # ORM model definitions
 class Session(Base):
     __tablename__ = "sessions"

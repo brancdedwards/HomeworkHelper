@@ -1,6 +1,8 @@
 import streamlit as st
-from utils.llm_helpers import generate_grammar_question, get_grammar_hint, generate_sentences_from_topics
+from utils.llm_helpers import generate_grammar_question, get_grammar_hint, generate_sentences_from_topics, get_available_categories
 from utils.db import log_attempt
+
+DEBUG = False  # Set to False to disable debug logs
 
 def show():
     st.title("📘 Grammar Practice")
@@ -8,10 +10,31 @@ def show():
 
     st.info("💡 Tip: You can generate new sentences for fresh practice.")
 
+    mode = st.radio(
+        "How would you like to generate practice questions?",
+        ("Generate at random", "Let me choose a category")
+    )
+
+    from utils.llm_helpers import get_available_categories
+
+    try:
+        categories = get_available_categories()
+    except Exception as e:
+        st.error(f"Error loading categories from database: {e}")
+        categories = []
+
+    if mode == "Let me choose a category":
+        chosen_category = st.selectbox("Select a category:", categories)
+    else:
+        chosen_category = None
+
     num_sentences = st.slider("How many sentences do you want to practice with?", 1, 10, 3)
     if st.button("🔄 Generate Sentences"):
         with st.spinner("Generating sentences..."):
-            sentences = generate_sentences_from_topics(n=num_sentences)
+            if mode == "Generate at random":
+                sentences = generate_sentences_from_topics(n=num_sentences, category=chosen_category)
+            else:
+                sentences = generate_sentences_from_topics(n=num_sentences, category=chosen_category)
             if not sentences:
                 st.error("Failed to generate sentences. Please check your API or LLM settings.")
                 return
@@ -34,7 +57,22 @@ def show():
     if "grammar_questions" not in st.session_state:
         questions = []
         for sentence in sentences:
-            question = generate_grammar_question(sentence, include_answer=True)
+            # Pull the last used category or default to general
+            category = st.session_state.get("last_category", "general")
+            if DEBUG:
+                st.write(f"DEBUG: Using category '{category}' for question generation on sentence: {sentence}")
+
+            # Thread category into question generation
+
+            question = generate_grammar_question(
+                sentence,
+                include_answer=True,
+                category=category,
+            )
+
+            # Store category for continuity
+            st.session_state["last_category"] = category
+
             if not question:
                 question = {"prompt": "Could not generate question.", "options": [], "answer": ""}
             questions.append(question)
@@ -46,14 +84,19 @@ def show():
     # Iterate over stored questions to display stable forms and persist answers/hints
     for i, question in enumerate(questions, start=1):
         sentence = sentences[i-1]
-        st.markdown(f"**Sentence {i}:** {sentence}")
+        st.markdown(f"**Sentence {i}:** {question['prompt']}")
 
         if not question or not question.get("prompt"):
             st.warning("Could not generate question.")
             continue
 
-        st.write(question["prompt"])
+        # st.write(f"DEBUG: questions: {question["prompt"]}")
         options = question.get("options", [])
+        options2 = sentence.get("options", [])
+        if DEBUG:
+            st.write(f"DEBUG options1: {options}")
+        # st.write(f"DEBUG options2: {options2}")
+
 
         if options:
             # Initialize session state for answer, submitted, and hint if not present
@@ -107,6 +150,8 @@ def show():
                         is_correct = True
                     else:
                         topic = current_choice.lower().strip()
+                        if DEBUG:
+                            st.write(f"DEBUG topic: {topic}")
                         hint = get_grammar_hint(topic)
                         st.session_state[f"hint_{i}"] = (
                             f"That's not quite right. {hint}"

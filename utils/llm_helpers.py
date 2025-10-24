@@ -4,23 +4,28 @@
 # Centralized utilities for handling OpenAI API calls.
 # Includes text simplification, question generation, vocabulary explanations,
 # and grammar-related sentence/question generation.
+from typing import Any
 from jedi.api.classes import defined_names
 from openai import OpenAI
 import os, yaml, re, json
 from dotenv import load_dotenv
 import streamlit as st
-# --- Import the new concept map loader ---
 from utils.concept_map_loader import load_concept_map, detect_category_for_topic, get_question_focus
+from utils.db import get_prompt_template
+
 
 # ---------- Setup ----------
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 yaml_path = os.path.join("data", "grammar_hints.yaml")
+DEBUG = False  # Set to False to disable debug logs
+
 
 # ---------- Core LLM Wrapper ----------
 def call_llm(prompt, model='gpt-4o-mini', temperature=0.2): #TODO: add subject as parameter (e.g. Math, grammar, etc)
     """Generic LLM call handler."""
     try:
+        if DEBUG: st.write(f"DEBUG: LLM call with prompt: ")
         resp = client.chat.completions.create(
             model=model,
             messages=[
@@ -58,13 +63,13 @@ def generate_sentences(n=5):
 
     prompt = (
         "You are generating short practice sentences for a 5th grader. "
-        f"Write exactly {n} simple, self-contained sentences (8–14 words each). "
+        f"Write exactly {n} simple, self-contained sentences (8–20 words each). "
         "Use everyday vocabulary. No dialogue, no quoted speech, no numbers or bullets. "
         "Return ONLY valid JSON: an array of strings, like [\"The cat sat on the warm windowsill.\", ...]. "
         "Do not include any preface or explanation."
     )
 
-    text = call_llm(prompt, temperature=0.4)
+    text = call_llm(prompt, temperature=0.1)
 
     # Try to extract and parse a JSON array
     try:
@@ -118,134 +123,106 @@ def generate_sentences(n=5):
     return sentences
 
 
-def generate_grammar_question(sentence, include_answer=False):
+def generate_grammar_question(sentence: object, category: object = None, include_answer: object = False) -> dict[str, str | list[str]] | Any:
     """
-    Generates a multiple-choice grammar question for the provided sentence.
+    Generates a multiple-choice grammar question for the provided sentence,
+    guided by the provided category (e.g., vocabulary, punctuation, writing_quality).
     Returns a dict: {"prompt": str, "options": [str, ...]} by default,
     or includes "answer" if include_answer=True.
-    The 'answer' is stored internally but not shown by default to avoid leaking the correct answer.
     """
-    import json, re
-    import random
+
+    # Detect and sanitize placeholder-style inputs (e.g., "Practice question about nouns", "Question on prefix", etc.)
+    if isinstance(sentence, dict):
+        sentence = sentence.get("question", str(sentence))
+
+    cleaned_sentence = sentence.strip()
+
+    # Only treat as placeholder if it's short and not already a full question/prompt
+    if len(cleaned_sentence.split()) <= 8 and re.fullmatch(
+        r"(?i)\s*(?:practice\s*question|question\s*(?:on|about)?)\s*[:\-\s]*([a-zA-Z_ ]+)\s*\.?$",
+        cleaned_sentence,
+    ):
+        placeholder_match = re.fullmatch(
+            r"(?i)\s*(?:practice\s*question|question\s*(?:on|about)?)\s*[:\-\s]*([a-zA-Z_ ]+)\s*\.?$",
+            cleaned_sentence,
+        )
+        if placeholder_match:
+            topic_clean = placeholder_match.group(1).strip().replace("_", " ").title()
+            sentence = f"Write a grammar practice question about {topic_clean} suitable for a 5th grader."
+            if DEBUG:
+                st.write(f"DEBUG: Placeholder sanitized → topic='{topic_clean}' → replaced with: {sentence}")
+    else:
+        if DEBUG:
+            st.write(f"DEBUG: Skipped placeholder sanitization for valid sentence: {sentence}")
+
+    # Safeguard: default category to "general" if None
+    if not category:
+        category = "general"
+
+    CATEGORY_EXAMPLES = {
+        "vocabulary": "Ask about what a word means, its prefix/suffix, or how it changes meaning.",
+        "writing_quality": "Ask how to improve clarity, coherence, or sentence strength.",
+        "punctuation": "Ask where punctuation should be placed or which punctuation mark is correct.",
+        "sentence_structure": "Ask about subjects, verbs, clauses, or sentence order.",
+        "literary_devices": "Ask which phrase shows a metaphor, simile, idiom, or personification.",
+        "mechanics": "Ask about capitalization, spelling, or general grammar correctness.",
+        "general": "Ask a basic grammar comprehension question suitable for a 5th grader."
+    }
+
+    category_instruction = CATEGORY_EXAMPLES.get(category.lower(), CATEGORY_EXAMPLES["general"])
 
     prompt = f"""
-        You are a 5th-grade ELA tutor. Create ONE multiple-choice grammar question
-        about this exact sentence (do not invent a different sentence):
-        "{sentence}"
-        Choose one of these types at random: (a) part of speech of a specific word,
-        (b) simile vs. metaphor if applicable, or (c) subject–verb agreement or punctuation.
-        
-        Return ONLY valid JSON with keys exactly: "prompt", "options", "answer".
-        *** It is absolutely forbidden to reveal, include, or imply the correct answer in the question prompt or in the options (for example, do not say "the answer is", "correct answer", or highlight or hint at the answer in any way). The question and options must be completely neutral and not contain the correct answer or any hint of it. ***
-        Example JSON:
-        {{
-          "prompt": "What part of speech is the word 'jumped' in the sentence?",
-          "options": ["noun", "verb", "adjective", "adverb"],
-          "answer": "verb"
-        }}
-        No preface, no explanation, no markdown, no code fences.
-        """
+    You are a 5th-grade ELA tutor. Create ONE multiple-choice grammar question
+    about this exact sentence:
+    "{sentence}"
 
-    def _sanitize_text(text, answer):
-        """Remove explicit answer reveals or hints from prompt/options."""
-        import re
-        if not answer:
-            return text
-        # Remove 'answer' if it appears at end, or in 'is correct', 'the answer is', etc.
-        # Remove patterns like: ' ... answer', ' ... is correct', ' ... the answer is ...'
-        patterns = [
-            rf"\b{re.escape(answer)}\b\s*(is\s+correct|is\s+the\s+answer|the\s+answer|correct\s+answer)?\.?$",
-            rf"the\s+answer\s+is\s+'?{re.escape(answer)}'?",
-            rf"correct\s+answer\s*:?(\s*'?{re.escape(answer)}'?)",
-        ]
-        # Remove from end of string or after punctuation
-        out = text
-        for pat in patterns:
-            out = re.sub(pat, "", out, flags=re.IGNORECASE)
-        return out.strip()
+    The question should reflect the topic category: "{category}".
+    {category_instruction}
+
+    Write a thoughtful, age-appropriate question that tests understanding of this concept.
+    Return ONLY valid JSON with keys exactly: "prompt", "options", and "answer".
+    Example JSON:
+    {{
+      "prompt": "[Question here]",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "answer": "Option A"
+    }}
+    No preface, no markdown, no explanations, no reasoning.
+    """
 
     try:
+        # category = detect_category_for_topic(topic, subject="grammar")
+        # if DEBUG: st.write(f"DEBUG: Sending prompt to LLM with category '{category}' and topic {topic}...")
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
+            temperature=0.4,
         )
+
         text = response.choices[0].message.content.strip()
-        # Extract strict JSON
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
             text = match.group(0)
         obj = json.loads(text)
+
         # Minimal validation
         if not all(k in obj for k in ("prompt", "options", "answer")):
             raise ValueError("Missing keys")
         if not isinstance(obj.get("options"), list) or not obj.get("options"):
             raise ValueError("Options malformed")
-        # Keep the correct answer for internal logic but do not expose it unless requested
+
+        # Sanitize: remove answer leaks from prompt
         answer = obj.get("answer")
-        if not include_answer and "answer" in obj:
-            obj.pop("answer")
+        def scrub_leaks(txt):
+            return re.sub(r"(is correct|the answer is|correct answer)", "", txt, flags=re.I).strip()
+        obj["prompt"] = scrub_leaks(obj.get("prompt", ""))
 
-        # --- Sanitize ONLY the prompt to prevent leaks; leave options intact so the correct choice remains selectable ---
-        def scrub_leaks(text, answer):
-            if not answer:
-                return text
-            import re
-            patterns = [
-                r"\bis correct\b",
-                r"\bthe answer is\b",
-                r"\bcorrect answer\b",
-            ]
-            pattern_re = re.compile(rf"\b({'|'.join(patterns)})\b", re.IGNORECASE)
-            return re.sub(pattern_re, "[redacted]", text)
-
-        if answer:
-            obj["prompt"] = scrub_leaks(obj.get("prompt", ""), answer)
-
-        # --- Normalize and ensure the correct answer is present among options ---
-        options = [str(o).strip() for o in obj.get("options", []) if str(o).strip()]
-
-        # Fixed set of distractors we can draw from
-        POS_CHOICES = [
-            "noun", "verb", "adjective", "adverb", "pronoun",
-            "preposition", "conjunction", "interjection", "article", "determiner"
-        ]
-
-        # Ensure answer is present (case-insensitive)
-        def ci_in(seq, item):
-            return any(s.lower() == item.lower() for s in seq)
-
-        if answer and not ci_in(options, answer):
-            options.append(answer)
-
-        # Deduplicate while preserving order (case-insensitive)
-        seen = set()
-        deduped = []
-        for o in options:
-            key = o.lower()
-            if key not in seen:
-                seen.add(key)
-                deduped.append(o)
-        options = deduped
-
-        # Top up with distractors to at least 4 choices
-        need = 4 - len(options)
-        if need > 0:
-            distractors = [p for p in POS_CHOICES if not ci_in(options, p) and (not answer or p.lower() != answer.lower())]
-            options.extend(distractors[:max(0, need)])
-
-        # If we somehow still have fewer than 2 options, fall back to a safe default set
-        if len(options) < 2:
-            options = ["noun", "verb", "adjective", "adverb"]
-
-        # Shuffle options to randomize order
-        import random
-        random.shuffle(options)
-        obj["options"] = options
+        if not include_answer:
+            obj.pop("answer", None)
 
         return obj
+
     except Exception as e:
-        # Safe fallback
         fallback = {
             "prompt": f"Which word is a noun in the sentence: '{sentence}'?",
             "options": ["noun", "verb", "adjective", "adverb"],
@@ -260,6 +237,7 @@ def get_grammar_hint(topic: str) -> str:
     """Retrieve grammar hint dynamically from grammar_hints.yaml."""
     import logging
     topic = topic.lower().strip()
+    yaml_path = os.path.join("data", "grammar_combined.yaml")
     if not os.path.exists(yaml_path):
         return "Remember, think about how the word is used in the sentence."
 
@@ -301,8 +279,30 @@ def get_active_topics(subject="grammar"):
         data = yaml.safe_load(f) or {}
     return [key for key, val in data.items() if val.get("active", False)]
 
+@st.cache_data(ttl=300)
+def get_available_categories(conn=None):
+    """
+    Returns a list of distinct categories from concept_map that have ACTIVE topics.
+    Used by the UI to populate the category dropdown.
+    """
+    from utils.db import get_connection
 
-def generate_sentences_from_topics(conn=None, n=3):
+    if conn is None or not hasattr(conn, "cursor"):
+        conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT DISTINCT cm.category
+        FROM concept_map cm
+        JOIN topics t ON cm.topic = t.name
+        WHERE t.active = 1
+          AND cm.category IS NOT NULL
+          AND TRIM(cm.category) != ''
+        ORDER BY LOWER(cm.category)
+    """)
+    rows = cur.fetchall()
+    return [r[0] for r in rows] if rows else []
+
+def generate_sentences_from_topics(conn=None, n=3, category=None):
     """
     Pulls active topics from DB, detects their categories using the concept map loader,
     and asks OpenAI for sentences for each, possibly customizing prompts per category.
@@ -313,114 +313,243 @@ def generate_sentences_from_topics(conn=None, n=3):
     if conn is None or not hasattr(conn, "cursor"):
         conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT name FROM topics WHERE active = 1;")
+    # cursor.execute("SELECT cm.topic FROM concept_map cm join topics t on cm.topic = t.name WHERE t.active = 1;")
+    if category:
+        cursor.execute("""
+                       SELECT cm.topic
+                       FROM concept_map cm
+                                JOIN topics t ON cm.topic = t.name
+                       WHERE LOWER(cm.category) = LOWER(?)
+                         AND t.active = 1;
+                       """, (category,))
+    else:
+        cursor.execute("""
+                       SELECT cm.topic
+                       FROM concept_map cm
+                                JOIN topics t ON cm.topic = t.name
+                       WHERE t.active = 1;
+                       """)
     active_topics = [row[0] for row in cursor.fetchall()]
+    # if DEBUG: st.write(f"DEBUG: Active topics: {active_topics}")
 
     # Load concept map for category detection
     concept_map = load_concept_map()
+    # if DEBUG: st.write(f"DEBUG: Loaded concept map: {concept_map}")
 
     # Randomly select up to n topics
     selected_topics = random.sample(active_topics, min(n, len(active_topics)))
-
+    if DEBUG: st.write(f"DEBUG: Selected topics: {selected_topics}")
     sentences = []
 
+    from utils.concept_map_db import get_concept
+    topics_data = []
     for topic in selected_topics:
-        st.write(f"DEBUG from llm_helpers (b4 detect category): Topic: {topic}")
-        category = detect_category_for_topic(topic, subject="grammar")
-        st.write(f"DEBUG from llm_helpers: Topic: {topic}, Category: {category}")
-        question_focus = get_question_focus(topic, subject="grammar")
-        st.write(f"DEBUG Topic: {topic}, Category: {category}, Question Focus: {question_focus}")
-        if question_focus:
-            prompt = (
-                f"Write exactly {n} short, self-contained sentences (8–14 words each) "
-                f"that help a 5th grader practice the concept '{topic}' ({category}). "
-                f"Use this question focus to guide how they're structured: '{question_focus}'. "
-                "Use everyday vocabulary. No dialogue, no quoted speech, no numbers or bullets. "
-                "Return ONLY valid JSON: an array of strings, like [\"The cat sat on the warm windowsill.\", ...]. "
-                "Do not include any preface or explanation."
-            )
-        elif category and category.lower() == "vocabulary":
-            prompt = (
-                f"Write exactly {n} simple sentences (8–14 words each) using the word '{topic}' in context. "
-                "The sentences should clearly show the meaning of the word to a 5th grader. "
-                "No dialogue, no quoted speech, no numbers or bullets. "
-                "Return ONLY valid JSON: an array of strings, like [\"The cat sat on the warm windowsill.\", ...]. "
-                "Do not include any preface or explanation."
-            )
-        elif category:
-            prompt = (
-                f"Write exactly {n} simple, self-contained sentences (8–14 words each) "
-                f"that demonstrate the concept of '{topic}' ({category}) for a 5th grader. "
-                "Use everyday vocabulary. No dialogue, no quoted speech, no numbers or bullets. "
-                "Return ONLY valid JSON: an array of strings, like [\"The cat sat on the warm windowsill.\", ...]. "
-                "Do not include any preface or explanation."
-            )
+        if DEBUG: st.write(f"DEBUG from llm_helpers (b4 category/question_focus lookup): Topic: {topic}")
+        # Try to get from DB first
+        concept_record = get_concept(topic, subject="grammar")
+        if concept_record:
+            category = concept_record.get("category") if isinstance(concept_record, dict) else getattr(concept_record, "category", None)
+            question_focus = concept_record.get("question_focus") if isinstance(concept_record, dict) else getattr(concept_record, "question_focus", None)
+            if DEBUG: st.write(f"DEBUG Topic: {topic} - used DB record for category/question_focus. Category: {category}, Question Focus: {question_focus}")
         else:
-            prompt = (
-                f"You are generating short practice sentences for a 5th grader. "
-                f"Write exactly {n} simple, self-contained sentences (8–14 words each) "
-                f"about or including the topic '{topic}'. "
-                "Use everyday vocabulary. No dialogue, no quoted speech, no numbers or bullets. "
-                "Return ONLY valid JSON: an array of strings, like [\"The cat sat on the warm windowsill.\", ...]. "
-                "Do not include any preface or explanation."
+            category = detect_category_for_topic(topic, subject="grammar")
+            question_focus = get_question_focus(topic, subject="grammar")
+            if DEBUG: st.write(f"DEBUG Topic: {topic} - used fallback detect_category/get_question_focus. Category: {category}, Question Focus: {question_focus}")
+        if question_focus:
+            # Instead of calling the LLM here, collect info for batching
+            topics_data.append({
+                "topic": topic,
+                "category": category,
+                "question_focus": question_focus,
+            })
+            # --- Debug: cache category in session state for visibility
+            st.session_state["last_category"] = category
+            if DEBUG: st.write(f"DEBUG: Cached last_category in session: {category}")
+        # For now, skip the other branches (vocabulary/category-only) for batching
+        # To keep the batching logic simple, only batch those with question_focus
+        # Optionally, you could batch all, but per instructions, just batch the question_focus ones
+
+    # --- Remove batching/groupby logic; do one LLM call per topic ---
+# --- Per-topic LLM call with guardrails and sanitization ---
+    if topics_data:
+        for t in topics_data:
+            if DEBUG: st.write(f"DEBUG: Generating single-question call for topic '{t['topic']}' in category '{t['category']}'")
+            example = None  # ensure example is always initialized
+            prompt = ""  # ensure prompt is defined before use
+
+            if example:
+                prompt += f"\nPlease see this example for guidance: {example}"
+
+            # Enforce strict JSON output
+            prompt += (
+                "\n\nIMPORTANT: Return ONLY valid JSON in this exact structure, no explanations or extra text:\n"
+                "{\n"
+                f'  "topic": "{t["topic"]}",\n'
+                '  "question": "[Your question here]",\n'
+                '  "options": ["Option A", "Option B", "Option C", "Option D"],\n'
+                '  "answer": "Correct Option"\n'
+                "}"
             )
 
-        text = call_llm(prompt, temperature=0.4)
+            text = call_llm(prompt)
+            prompt_template = None
+            try:
+                cursor.execute("""
+                               SELECT prompt_template, example
+                               FROM prompts
+                               WHERE LOWER(category) = LOWER(?)
+                                 AND LOWER(topic) = LOWER(?)
+                               LIMIT 1;
+                               """, (t['category'], t['topic']))
+                row = cursor.fetchone()
+                if row:
+                    prompt_template, db_example = row
+                    if db_example:
+                        example = db_example
+                    if DEBUG:
+                        st.write(f"DEBUG: Found DB prompt template for {t['topic']} ({t['category']})")
+            except Exception as e:
+                if DEBUG:
+                    st.write(f"DEBUG: Failed to fetch prompt template for {t['topic']}: {e}")
 
-        # Try to extract and parse a JSON array
-        try:
-            match = re.search(r"\[.*\]", text, re.DOTALL)
+            # Build prompt from template or fallback
+            if prompt_template:
+                prompt = prompt_template.format(
+                    topic=t['topic'],
+                    category=t['category'],
+                    question_focus=t['question_focus']
+                )
+            else:
+                prompt = f"""
+            You are a 5th-grade English tutor. Generate ONE multiple-choice grammar question for the topic "{t['topic']}".
+            This question should directly test the concept named in the topic.
+            Category: {t['category']}
+            Question Focus: {t['question_focus']}
+
+            Rules:
+            - The question must be self-contained and natural for a 5th grader.
+            - Include 4 answer choices.
+            - Clearly indicate the correct answer.
+
+            Return ONLY valid JSON in this format:
+            {{
+              "topic": "{t['topic']}",
+              "question": "[Your question here]",
+              "options": ["A", "B", "C", "D"],
+              "answer": "Correct Option"
+            }}
+            """
+            # Append example if available
+            if example:
+                prompt += f"\nPlease see this example for guidance: {example}"
+
+            # Enforce strict JSON output
+            prompt += (
+                "\n\nIMPORTANT: Return ONLY valid JSON in this exact structure, no explanations or extra text:\n"
+                "{\n"
+                f'  "topic": "{t["topic"]}",\n'
+                '  "question": "[Your question here]",\n'
+                '  "options": ["Option A", "Option B", "Option C", "Option D"],\n'
+                '  "answer": "Correct Option"\n'
+                "}"
+            )
+
+            text = call_llm(prompt)
+            # ---- GUARDRAIL: enforce strict JSON output and clean up any meta prefixes ----
+            import json, re
+            text = text.strip()
+            text = re.sub(r"(?i)(^sure|^okay|^here|^let.?s|^of course).*", "", text)
+            text = re.sub(r"(?i)(question on|topic:|category:)\s*[A-Za-z_ ]+[:\-]*", "", text)
+            text = re.sub(r"(?i)please see.*guidance.*", "", text)
+
+            # Attempt to extract JSON
+            match = re.search(r"\{.*\}", text, re.DOTALL)
             if match:
                 text = match.group(0)
-            items = json.loads(text)
-            if not isinstance(items, list):
-                raise ValueError("Not a list")
-            candidates = [str(s).strip() for s in items]
-        except Exception:
-            # Fallback: split lines and clean
-            lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-            candidates = []
-            for ln in lines:
-                # Drop meta/intros like "Sure" or "Here are" etc.
-                if re.match(r"^(sure|here|let\'s|let us|okay|ok)\b", ln.lower()):
+
+            # Safety: don't attempt to parse if empty or truncated
+            if not text or len(text.strip()) < 5:
+                if DEBUG:
+                    st.write(f"DEBUG: Empty or invalid JSON text for topic '{t['topic']}'. Text was: {repr(text[:100])}")
+                continue
+
+            try:
+                item = json.loads(text)
+            except json.JSONDecodeError:
+                if DEBUG:
+                    st.write(f"DEBUG: JSON parse failed once, retrying sanitize pass for topic '{t['topic']}'")
+                text = re.sub(r"```(?:json)?|```", "", text)
+                text = re.sub(r"(?i)example json.*?\{", "{", text)
+                text = text.strip()
+
+                # Skip if text still empty or too short
+                if not text or len(text.strip()) < 5:
+                    if DEBUG:
+                        st.write(f"DEBUG: JSON text still invalid/empty after sanitize for topic '{t['topic']}' → skipping")
                     continue
-                # Remove leading numbering
-                ln = re.sub(r"^\s*\d+\s*[\).:-]?\s*", "", ln)
-                candidates.append(ln)
 
-        # Final filtering: keep only plausible sentences
-        def good(s: str) -> bool:
-            s = s.strip()
-            if len(s.split()) < 4:
-                return False
-            if not re.search(r"[.!?]$", s):
-                return False
-            # Avoid sentences that describe the prompt itself
-            if re.search(r"(sentence|example|prompt|simple sentence)", s.lower()):
-                return False
-            return True
+                try:
+                    item = json.loads(text)
+                except json.JSONDecodeError as e:
+                    if DEBUG:
+                        st.write(f"DEBUG: JSON parsing failed again for topic '{t['topic']}' — raw text:\n{text}\nError: {e}")
+                    continue  # Skip instead of crashing
 
-        topic_sentences = [s for s in candidates if good(s)]
+            # Validate structure strictly
+            if not isinstance(item, dict) or not all(k in item for k in ("question", "options", "answer")):
+                if DEBUG: st.write(f"DEBUG: Invalid or incomplete JSON for topic '{t['topic']}' → skipping")
+                continue
 
-        # If we still don't have enough, truncate/extend gracefully
-        if len(topic_sentences) > n:
-            topic_sentences = topic_sentences[:n]
-        elif len(topic_sentences) < n:
-            # Duplicate last items to meet the requested count (better than failing UI)
-            while topic_sentences and len(topic_sentences) < n:
-                topic_sentences.append(topic_sentences[-1])
-            # If completely empty, give safe placeholders
-            if not topic_sentences:
-                topic_sentences = [
-                    "The cat slept on the sunny porch.",
-                    "A blue bird landed on the fence.",
-                    "We packed snacks for the short hike.",
-                ][:n]
-        sentences.extend(topic_sentences)
+            # Clean any leftover phrasing from the question
+            item["question"] = re.sub(
+                r"(?i)(question on|topic:|category:)\s*[A-Za-z_ ]+[:\-]*", "", item["question"]
+            ).strip()
+            sentences.append(item)
+            if DEBUG: st.write(f"DEBUG: Added question for topic '{t['topic']}'")
 
-    # After collecting all, limit the total count to n
-    sentences = sentences[:n]
+    # --- Final guardrail: drop malformed or duplicate entries ---
+    sentences = [
+        s for s in sentences
+        if isinstance(s, dict)
+        and s.get("question")
+        and isinstance(s.get("options"), list)
+        and len(s["options"]) >= 2
+    ]
+
+    # --- Post-processing: flatten and balance across categories ---
+    # Avoid duplicate questions by using a set while preserving order (based on question string)
+    seen = set()
+    unique_questions = []
+    for q in sentences:
+        # Use question text as unique key if q is dict, else q itself
+        key = q["question"] if isinstance(q, dict) and "question" in q else str(q)
+        if key not in seen:
+            unique_questions.append(q)
+            seen.add(key)
+
+    # Limit to requested count
+    sentences = unique_questions[:n]
+
+    # If still short, refill by sampling from other categories or re-query
+    # UI fallback: generate a readable header+summary for user clarity, not sent to LLM
+    if len(sentences) < n:
+        import random
+        filler_topics = [t["topic"] for t in topics_data if t["topic"] not in [q["topic"] for q in sentences if isinstance(q, dict) and "topic" in q]]
+        if DEBUG: st.write(f"DEBUG: Replenishing from topics {filler_topics}")
+        while len(sentences) < n:
+            t = random.choice(topics_data)
+            # Provide a clear header for user-facing UI only; not sent to LLM
+            header = f"Question on {t['topic'].capitalize()} ({t['category']})"
+            summary = f"{t['question_focus'].strip().rstrip('?')}?"
+            sentences.append({
+                "topic": t["topic"],
+                "question": f"{header}: {summary}",
+                "options": [],
+                "answer": ""
+            })
+
     return sentences
+
 # ---------- PDF Export Function ----------
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet

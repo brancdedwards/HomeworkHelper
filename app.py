@@ -1,6 +1,6 @@
 import streamlit as st
 from modules import learning_mode, view_history, add_passage, grammar_practice, admin_standards
-
+st.set_option("client.showErrorDetails", True)
 # ---------- Streamlit Page Config ----------
 st.set_page_config(
     page_title="Homework Helper",

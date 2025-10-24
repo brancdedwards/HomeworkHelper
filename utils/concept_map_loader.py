@@ -12,6 +12,9 @@ except ImportError:
 
 DATA_DIR = os.path.join(os.path.dirname(__file__),"../" "data")
 
+DEBUG = False  # Set to False to disable debug logs
+
+
 def _load_concept_map_uncached(subject: str = "grammar"):
     """
     Loads the concept map from DB if available; falls back to YAML.
@@ -21,7 +24,7 @@ def _load_concept_map_uncached(subject: str = "grammar"):
 
     # Prefer DB if present
     if DB_PATH and os.path.exists(DB_PATH):
-        st.write(f"DEBUG: Using DB mode for subject '{subject}'")
+        if DEBUG: st.write(f"DEBUG: Using DB mode for subject '{subject}'")
         return {"db_mode": True}
 
     yaml_path = os.path.join(DATA_DIR, f"{subject}_concept_map.yaml")
@@ -34,9 +37,6 @@ def _load_concept_map_uncached(subject: str = "grammar"):
 @lru_cache(maxsize=None)
 def load_concept_map(subject: str = "grammar"):
     return _load_concept_map_uncached(subject)
-
-
-
 
 def diagnostic_concept_map():
     conn = sqlite3.connect(DB_PATH)
@@ -91,15 +91,17 @@ def get_question_focus(topic: str, subject: str = "grammar") -> str:
 
     def _find_question_focus(node, topic, path=""):
         if isinstance(node, dict):
+            if DEBUG: st.write(f"DEBUG: Trying to find question_focus for topic '{topic}'...")
             for key, value in node.items():
+                if DEBUG: st.write(f"DEBUG: Trying key '{key}'...")
                 current_path = f"{path}/{key}" if path else key
-                # st.write(f"DEBUG: Traversing path: {current_path}")
+                if DEBUG: st.write(f"DEBUG: Traversing path: {current_path}")
                 if key == topic and isinstance(value, dict) and "question_focus" in value:
                     qf = value["question_focus"]
-                    st.write(f"DEBUG: Found question_focus at path: {current_path}: {qf}")
+                    if DEBUG: st.write(f"DEBUG: Found question_focus at path: {current_path}: {qf}")
                     return qf
                 elif topic.lower() in key.lower() or key.lower() in topic.lower():
-                    st.write(f"DEBUG: Fuzzy match found for '{topic}' in key '{key}' at path: {current_path}")
+                    if DEBUG: st.write(f"DEBUG: Fuzzy match found for '{topic}' in key '{key}' at path: {current_path}")
                     if isinstance(value, dict) and "question_focus" in value:
                         return value["question_focus"]
                 else:
@@ -115,32 +117,32 @@ def get_question_focus(topic: str, subject: str = "grammar") -> str:
             return None
         if subject in concept_map:
             concept_map = concept_map[subject]
-            st.write(f"DEBUG: Using concept_map['{subject}'] as subject_data")
+            if DEBUG: st.write(f"DEBUG: Using concept_map['{subject}'] as subject_data")
         # Replacement block for DB mode or YAML fallback
         if "db_mode" in concept_map and concept_map["db_mode"] is True:
-            st.write(f"DEBUG: DB mode active. Using get_concept() for '{topic}'")
+            if DEBUG: st.write(f"DEBUG: DB mode active. Using get_concept() for '{topic}'")
             if get_concept:
                 st.write("DEBUG: trying get_concept() method")
                 try:
-                    st.write(f"DEBUG: Retrieving from get_concept: Topic: {topic} Subject: {subject}")
+                    if DEBUG: st.write(f"DEBUG: Retrieving from get_concept: Topic: {topic} Subject: {subject}")
                     concept = get_concept(topic, subject)
                     # Code fails at get_concept(), returns none
-                    # st.write(f"DEBUG: Retrieved from get_concept: {concept}")
-                    st.write(f"DEBUG: Retrieved from get_concept: {concept}")
+                    # if DEBUG: st.write(f"DEBUG: Retrieved from get_concept: {concept}")
+                    if DEBUG: st.write(f"DEBUG: Retrieved from get_concept: {concept}")
                     if concept:
-                        st.write(f"DEBUG: Retrieved from DB -> Category: {concept['category']}, Question Focus: {concept['question_focus']}")
+                        if DEBUG: st.write(f"DEBUG: Retrieved from DB -> Category: {concept['category']}, Question Focus: {concept['question_focus']}")
                         return concept.get("question_focus")
                     else:
-                        st.write(f"DEBUG: No DB entry found for topic '{topic}'")
+                        if DEBUG: st.write(f"DEBUG: No DB entry found for topic '{topic}'")
                 except Exception as e:
-                    st.write(f"DEBUG: Exception in get_question_focus (DB mode): {e}")
+                    if DEBUG: st.write(f"DEBUG: Exception in get_question_focus (DB mode): {e}")
             else:
                 st.write("DEBUG: get_concept() not defined. Falling back to YAML logic.")
         else:
             st.write("DEBUG: Using top-level concept_map as subject_data")
             return _find_question_focus(concept_map, topic)
     except Exception as e:
-        st.write(f"DEBUG: Exception in get_question_focus: {e}")
+        if DEBUG: st.write(f"DEBUG: Exception in get_question_focus: {e}")
         pass
     return None
 
@@ -152,16 +154,21 @@ def detect_category_for_topic(topic: str, subject: str = "grammar") -> str:
     import streamlit as st
 
     def _find_category(node, topic, path=""):
+        st.write("DEBUG: Trying to find category...")
+        # Short-circuit if node is only db_mode
+        if isinstance(node, dict) and node.keys() == {"db_mode"} and node.get("db_mode") is True:
+            st.write("DEBUG: DB mode detected only, skipping _find_category recursion")
+            return None
         if isinstance(node, dict):
             for key, value in node.items():
-                st.write(f"DEBUG: Key: {key}, Value: {value}")
+                # Skip non-string keys and keys like 'db_mode' or boolean values
+                if not isinstance(key, str) or key == "db_mode" or isinstance(value, bool):
+                    if DEBUG: st.write(f"DEBUG: Skipping key '{key}' because it is non-string or irrelevant")
+                    continue
                 current_path = f"{path}/{key}" if path else key
-                # st.write(f"DEBUG: Traversing path: {current_path}")
                 if key.lower() == topic.lower():
-                    st.write(f"DEBUG: Found topic '{topic}' at path: {current_path}")
-                    # Return the category part of the path (parent key)
-                    # Since key is topic, return the last category in path before topic
-                    # path may be like "category/subcategory/topic"
+                    if DEBUG: st.write(f"DEBUG: going thru if key.lower() statement")
+                    if DEBUG: st.write(f"DEBUG: Found topic '{topic}' at path: {current_path}")
                     parts = current_path.split('/')
                     if len(parts) >= 2:
                         category = parts[-2]
@@ -169,7 +176,7 @@ def detect_category_for_topic(topic: str, subject: str = "grammar") -> str:
                         category = parts[0]
                     return category
                 elif topic.lower() in key.lower() or key.lower() in topic.lower():
-                    # st.write(f"DEBUG: Fuzzy match found for '{topic}' in key '{key}' at path: {current_path}")
+                    if DEBUG: st.write(f"DEBUG: topic did not match key '{key}' at path: {current_path}")
                     parts = current_path.split('/')
                     if len(parts) >= 2:
                         category = parts[-2]
@@ -181,22 +188,33 @@ def detect_category_for_topic(topic: str, subject: str = "grammar") -> str:
                     if found is not None:
                         return found
                 elif isinstance(value, list):
-                    # If value is a list, check if topic is in list (case insensitive)
                     if any(t.lower() == topic.lower() for t in value):
-                        st.write(f"DEBUG: Found topic '{topic}' in list at path: {current_path}")
+                        if DEBUG: st.write(f"DEBUG: Found topic '{topic}' in list at path: {current_path}")
                         return key
         return None
 
     try:
         concept_map = load_concept_map(subject)
+        # If DB mode active, query get_concept directly
+        if isinstance(concept_map, dict) and concept_map.get("db_mode") is True:
+            st.write("DEBUG: DB mode active in detect_category_for_topic, querying get_concept")
+            if get_concept:
+                concept = get_concept(topic, subject)
+                if concept and "category" in concept:
+                    return concept["category"]
+                else:
+                    return None
+            else:
+                st.write("DEBUG: get_concept() not defined in DB mode")
+                return None
         subject_data = concept_map.get(subject, concept_map)
-        st.write(f"DEBUG: Loaded concept map keys: {list(subject_data.keys())}")
+        if DEBUG: st.write(f"DEBUG: Loaded concept map keys: {subject_data}")
 
         category = _find_category(subject_data, topic)
         if category:
             return category
 
     except Exception as e:
-        st.write(f"DEBUG: Exception in detect_category_for_topic: {e}")
+        if DEBUG: st.write(f"DEBUG: Exception in detect_category_for_topic: {e}")
 
-    return "general"
+    return "haha"

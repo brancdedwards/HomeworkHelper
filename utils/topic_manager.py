@@ -99,12 +99,12 @@ def sync_yaml_to_db():
                 UPDATE concept_map
                 SET category = ?, question_focus = ?, subject = ?
                 WHERE id = ?
-            """, ("general", details.get("question_focus", ""), subject, concept_exists[0]))
+            """, (details.get("category", ""), details.get("question_focus", ""), subject, concept_exists[0]))
         else:
             cur.execute("""
                 INSERT INTO concept_map (subject, category, topic, question_focus)
                 VALUES (?, ?, ?, ?)
-            """, (subject, "general", topic_name, details.get("question_focus", "")))
+            """, (subject, details.get("category", ""), topic_name, details.get("question_focus", "")))
 
     conn.commit()
     conn.close()
@@ -113,7 +113,7 @@ def sync_yaml_to_db():
     print(f"✅ Inserted: {inserted}")
     print(f"🔄 Updated: {updated}")
     print(f"⚠️ Skipped: {skipped}")
-
+    return topics
 
 # Example run:
 # sync_yaml_to_topics("data/grammar_combined.yaml", "data/homework_helper.db")
