@@ -55,27 +55,17 @@ def show():
 
     # Generate questions once and store them in session_state to avoid regeneration on each rerun
     if "grammar_questions" not in st.session_state:
-        questions = []
-        for sentence in sentences:
-            # Pull the last used category or default to general
-            category = st.session_state.get("last_category", "general")
-            if DEBUG:
-                st.write(f"DEBUG: Using category '{category}' for question generation on sentence: {sentence}")
+        # Use questions directly from the topic-based generator
+        questions = sentences  # These already include topic, question, options, and answer
+        for q in questions:
+            # Prefer the category returned by the generator
+            if "category" not in q or not q["category"]:
+                q["category"] = chosen_category or "general"
 
-            # Thread category into question generation
+        # Preserve only the last used category for session continuity
+        if questions:
+            st.session_state["last_category"] = chosen_category or questions[-1].get("category", "general")
 
-            question = generate_grammar_question(
-                sentence,
-                include_answer=True,
-                category=category,
-            )
-
-            # Store category for continuity
-            st.session_state["last_category"] = category
-
-            if not question:
-                question = {"prompt": "Could not generate question.", "options": [], "answer": ""}
-            questions.append(question)
         st.session_state["grammar_questions"] = questions
 
     st.subheader("🧠 Identify Grammar Elements")
@@ -84,18 +74,15 @@ def show():
     # Iterate over stored questions to display stable forms and persist answers/hints
     for i, question in enumerate(questions, start=1):
         sentence = sentences[i-1]
-        st.markdown(f"**Sentence {i}:** {question['prompt']}")
+        category_label = question.get('category', 'General').replace('_', ' ').title()
+        st.markdown(f"**Sentence {i}\n:** {question['question']}")
 
-        if not question or not question.get("prompt"):
+        if not question or not question.get("question"):
             st.warning("Could not generate question.")
             continue
 
-        # st.write(f"DEBUG: questions: {question["prompt"]}")
         options = question.get("options", [])
         options2 = sentence.get("options", [])
-        if DEBUG:
-            st.write(f"DEBUG options1: {options}")
-        # st.write(f"DEBUG options2: {options2}")
 
 
         if options:
@@ -171,8 +158,8 @@ def show():
             if f"submitted_{i}" not in st.session_state:
                 st.session_state[f"submitted_{i}"] = False
 
-            user_input = st.text_input("Your answer:", key=f"input_{i}", value=st.session_state[f"input_{i}"])
-            st.session_state[f"input_{i}"] = user_input
+            default_value = st.session_state.get(f"input_{i}", "")
+            user_input = st.text_input("Your answer:", key=f"input_{i}", value=default_value)
             if st.button(f"✅ Submit Answer {i}", key=f"sub_{i}"):
                 st.session_state[f"submitted_{i}"] = True
 

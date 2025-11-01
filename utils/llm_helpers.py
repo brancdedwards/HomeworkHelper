@@ -20,6 +20,37 @@ client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 yaml_path = os.path.join("data", "grammar_hints.yaml")
 DEBUG = False  # Set to False to disable debug logs
 
+# ---------- Unified Prompt Builder and Tutor Personas ----------
+from functools import lru_cache
+
+PROMPT_PERSONAS = {
+    "grammar_mechanics": "You are a 5th-grade grammar tutor who helps students master sentence correction and structure.",
+    "writing_quality": "You are a 5th-grade writing tutor who teaches organization, transitions, and clarity.",
+    "vocabulary": "You are a 5th-grade vocabulary tutor who focuses on word meaning and usage.",
+    "literary_devices": "You are a 5th-grade literature tutor who helps students recognize figurative language.",
+    "punctuation": "You are a 5th-grade punctuation tutor helping students choose correct marks in sentences.",
+    "sentence_structure": "You are a 5th-grade language tutor who explains how clauses form sentences.",
+}
+
+@lru_cache(maxsize=64)
+def build_prompt(persona, topic, category, question_focus, example, num_per_topic=1):
+    """Constructs a consistent, category-aware LLM prompt."""
+    category_label = category.replace('_', ' ').title()
+    return f"""{persona}
+
+Your task:
+- Generate {num_per_topic} multiple-choice or fill-in-the-blank questions for 5th graders.
+- Focus on the topic: {topic} ({category_label}).
+- Focus area: {question_focus}.
+- Include one example for guidance: {example or 'None provided'}.
+- Each question must have either:
+  • exactly 4 multiple-choice options with one correct answer labeled under the key "answer", OR
+  • one fill-in-the-blank style question where the correct word or phrase is stored only under the "answer" key (not revealed in the prompt).
+- The blank should be represented by an underscore (____) or ellipsis (…) in the sentence.
+- Never include or hint at the answer inside the question text or options.
+- Keep each question short, age-appropriate, and clear.
+- Return ONLY valid JSON with keys "topic", "question", "options", and "answer".
+- Do not include explanations or commentary."""
 
 # ---------- Core LLM Wrapper ----------
 def call_llm(prompt, model='gpt-4o-mini', temperature=0.2): #TODO: add subject as parameter (e.g. Math, grammar, etc)
@@ -159,37 +190,37 @@ def generate_grammar_question(sentence: object, category: object = None, include
     if not category:
         category = "general"
 
-    CATEGORY_EXAMPLES = {
-        "vocabulary": "Ask about what a word means, its prefix/suffix, or how it changes meaning.",
-        "writing_quality": "Ask how to improve clarity, coherence, or sentence strength.",
-        "punctuation": "Ask where punctuation should be placed or which punctuation mark is correct.",
-        "sentence_structure": "Ask about subjects, verbs, clauses, or sentence order.",
-        "literary_devices": "Ask which phrase shows a metaphor, simile, idiom, or personification.",
-        "mechanics": "Ask about capitalization, spelling, or general grammar correctness.",
-        "general": "Ask a basic grammar comprehension question suitable for a 5th grader."
-    }
-
-    category_instruction = CATEGORY_EXAMPLES.get(category.lower(), CATEGORY_EXAMPLES["general"])
+    category_label = category.replace("_", " ").strip().title() if category else "English"
 
     prompt = f"""
-    You are a 5th-grade ELA tutor. Create ONE multiple-choice grammar question
-    about this exact sentence:
-    "{sentence}"
+You are a 5th-grade {category_label} tutor.
 
-    The question should reflect the topic category: "{category}".
-    {category_instruction}
+Your task:
+- Write one multiple-choice question that teaches a 5th grader a concept related to the following text.
+- Keep it simple, natural, and age-appropriate.
+- Do not ask about the text directly (avoid “In the sentence above…”).
+- Stay within {category_label.lower()} concepts.
+- Each question must have exactly 4 options and 1 correct answer.
 
-    Write a thoughtful, age-appropriate question that tests understanding of this concept.
-    Return ONLY valid JSON with keys exactly: "prompt", "options", and "answer".
-    Example JSON:
-    {{
-      "prompt": "[Question here]",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "answer": "Option A"
-    }}
-    No preface, no markdown, no explanations, no reasoning.
-    """
+Return ONLY valid JSON with keys "prompt", "options", and "answer".
 
+Example text:
+"{sentence}"
+"""
+    # Use unified prompt builder
+    persona = PROMPT_PERSONAS.get(
+        category,
+        f"You are a 5th-grade {category.replace('_', ' ')} tutor."
+    )
+
+    prompt = build_prompt(
+        persona=persona,
+        topic=cleaned_sentence,
+        category=category,
+        question_focus=f"Grammar question generation from a sample sentence.",
+        example=None,
+        num_per_topic=1
+    )
     try:
         # category = detect_category_for_topic(topic, subject="grammar")
         # if DEBUG: st.write(f"DEBUG: Sending prompt to LLM with category '{category}' and topic {topic}...")
@@ -214,7 +245,11 @@ def generate_grammar_question(sentence: object, category: object = None, include
         # Sanitize: remove answer leaks from prompt
         answer = obj.get("answer")
         def scrub_leaks(txt):
-            return re.sub(r"(is correct|the answer is|correct answer)", "", txt, flags=re.I).strip()
+            return re.sub(
+                r"(?i)\b(the answer is|answer:?|correct answer:?)(.*?)($|\.)",
+                "",
+                txt
+            ).strip()
         obj["prompt"] = scrub_leaks(obj.get("prompt", ""))
 
         if not include_answer:
@@ -336,10 +371,20 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
     concept_map = load_concept_map()
     # if DEBUG: st.write(f"DEBUG: Loaded concept map: {concept_map}")
 
-    # Randomly select up to n topics
-    selected_topics = random.sample(active_topics, min(n, len(active_topics)))
+    # Compute how many questions per topic
+    if len(active_topics) == 0:
+        return []
+    num_per_topic = max(1, n // len(active_topics))
+    if DEBUG: st.write(f"DEBUG: Number of questions per topic: {num_per_topic}")
+
+    # If there are more topics than n, sample n topics; else use all
+    if len(active_topics) > n:
+        selected_topics = random.sample(active_topics, n)
+    else:
+        selected_topics = active_topics
     if DEBUG: st.write(f"DEBUG: Selected topics: {selected_topics}")
     sentences = []
+    seen_questions = set()
 
     from utils.concept_map_db import get_concept
     topics_data = []
@@ -348,164 +393,190 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
         # Try to get from DB first
         concept_record = get_concept(topic, subject="grammar")
         if concept_record:
-            category = concept_record.get("category") if isinstance(concept_record, dict) else getattr(concept_record, "category", None)
+            t_category = concept_record.get("category") if isinstance(concept_record, dict) else getattr(concept_record, "category", None)
             question_focus = concept_record.get("question_focus") if isinstance(concept_record, dict) else getattr(concept_record, "question_focus", None)
-            if DEBUG: st.write(f"DEBUG Topic: {topic} - used DB record for category/question_focus. Category: {category}, Question Focus: {question_focus}")
+            if DEBUG: st.write(f"DEBUG Topic: {topic} - used DB record for category/question_focus. Category: {t_category}, Question Focus: {question_focus}")
         else:
-            category = detect_category_for_topic(topic, subject="grammar")
+            # t_category = detect_category_for_topic(topic, subject="grammar")
             question_focus = get_question_focus(topic, subject="grammar")
-            if DEBUG: st.write(f"DEBUG Topic: {topic} - used fallback detect_category/get_question_focus. Category: {category}, Question Focus: {question_focus}")
+            if DEBUG: st.write(f"DEBUG Topic: {topic} - used fallback detect_category/get_question_focus. Category: {t_category}, Question Focus: {question_focus}")
         if question_focus:
-            # Instead of calling the LLM here, collect info for batching
             topics_data.append({
                 "topic": topic,
-                "category": category,
+                "category": t_category,
                 "question_focus": question_focus,
             })
-            # --- Debug: cache category in session state for visibility
-            st.session_state["last_category"] = category
-            if DEBUG: st.write(f"DEBUG: Cached last_category in session: {category}")
-        # For now, skip the other branches (vocabulary/category-only) for batching
-        # To keep the batching logic simple, only batch those with question_focus
-        # Optionally, you could batch all, but per instructions, just batch the question_focus ones
+            st.session_state["last_category"] = t_category
+            if DEBUG: st.write(f"DEBUG: Cached last_category (llm helpers) in session: {t_category}")
 
-    # --- Remove batching/groupby logic; do one LLM call per topic ---
-# --- Per-topic LLM call with guardrails and sanitization ---
-    if topics_data:
-        for t in topics_data:
-            if DEBUG: st.write(f"DEBUG: Generating single-question call for topic '{t['topic']}' in category '{t['category']}'")
-            example = None  # ensure example is always initialized
-            prompt = ""  # ensure prompt is defined before use
-
-            if example:
-                prompt += f"\nPlease see this example for guidance: {example}"
-
-            # Enforce strict JSON output
-            prompt += (
-                "\n\nIMPORTANT: Return ONLY valid JSON in this exact structure, no explanations or extra text:\n"
-                "{\n"
-                f'  "topic": "{t["topic"]}",\n'
-                '  "question": "[Your question here]",\n'
-                '  "options": ["Option A", "Option B", "Option C", "Option D"],\n'
-                '  "answer": "Correct Option"\n'
-                "}"
-            )
-
-            text = call_llm(prompt)
-            prompt_template = None
-            try:
-                cursor.execute("""
-                               SELECT prompt_template, example
-                               FROM prompts
-                               WHERE LOWER(category) = LOWER(?)
-                                 AND LOWER(topic) = LOWER(?)
-                               LIMIT 1;
-                               """, (t['category'], t['topic']))
-                row = cursor.fetchone()
-                if row:
-                    prompt_template, db_example = row
-                    if db_example:
-                        example = db_example
-                    if DEBUG:
-                        st.write(f"DEBUG: Found DB prompt template for {t['topic']} ({t['category']})")
-            except Exception as e:
-                if DEBUG:
-                    st.write(f"DEBUG: Failed to fetch prompt template for {t['topic']}: {e}")
-
-            # Build prompt from template or fallback
-            if prompt_template:
-                prompt = prompt_template.format(
-                    topic=t['topic'],
-                    category=t['category'],
-                    question_focus=t['question_focus']
-                )
-            else:
-                prompt = f"""
-            You are a 5th-grade English tutor. Generate ONE multiple-choice grammar question for the topic "{t['topic']}".
-            This question should directly test the concept named in the topic.
-            Category: {t['category']}
-            Question Focus: {t['question_focus']}
-
-            Rules:
-            - The question must be self-contained and natural for a 5th grader.
-            - Include 4 answer choices.
-            - Clearly indicate the correct answer.
-
-            Return ONLY valid JSON in this format:
-            {{
-              "topic": "{t['topic']}",
-              "question": "[Your question here]",
-              "options": ["A", "B", "C", "D"],
-              "answer": "Correct Option"
-            }}
-            """
-            # Append example if available
-            if example:
-                prompt += f"\nPlease see this example for guidance: {example}"
-
-            # Enforce strict JSON output
-            prompt += (
-                "\n\nIMPORTANT: Return ONLY valid JSON in this exact structure, no explanations or extra text:\n"
-                "{\n"
-                f'  "topic": "{t["topic"]}",\n'
-                '  "question": "[Your question here]",\n'
-                '  "options": ["Option A", "Option B", "Option C", "Option D"],\n'
-                '  "answer": "Correct Option"\n'
-                "}"
-            )
-
-            text = call_llm(prompt)
-            # ---- GUARDRAIL: enforce strict JSON output and clean up any meta prefixes ----
-            import json, re
+    import json, re
+    # Helper function for parsing and cleaning
+    def parse_llm_json_list(text):
+        text = text.strip()
+        text = re.sub(r"(?i)(^sure|^okay|^here|^let.?s|^of course).*", "", text)
+        text = re.sub(r"(?i)(question on|topic:|category:)\s*[A-Za-z_ ]+[:\-]*", "", text)
+        text = re.sub(r"(?i)please see.*guidance.*", "", text)
+        # Attempt to extract JSON
+        match = re.search(r"\[.*\]", text, re.DOTALL)
+        if match:
+            text = match.group(0)
+        # Safety: don't attempt to parse if empty or truncated
+        if not text or len(text.strip()) < 5:
+            return []
+        try:
+            items = json.loads(text)
+            if not isinstance(items, list):
+                return []
+            return items
+        except Exception:
+            # Retry sanitize pass
+            text = re.sub(r"```(?:json)?|```", "", text)
+            text = re.sub(r"(?i)example json.*?\[", "[", text)
             text = text.strip()
-            text = re.sub(r"(?i)(^sure|^okay|^here|^let.?s|^of course).*", "", text)
-            text = re.sub(r"(?i)(question on|topic:|category:)\s*[A-Za-z_ ]+[:\-]*", "", text)
-            text = re.sub(r"(?i)please see.*guidance.*", "", text)
-
-            # Attempt to extract JSON
-            match = re.search(r"\{.*\}", text, re.DOTALL)
-            if match:
-                text = match.group(0)
-
-            # Safety: don't attempt to parse if empty or truncated
             if not text or len(text.strip()) < 5:
-                if DEBUG:
-                    st.write(f"DEBUG: Empty or invalid JSON text for topic '{t['topic']}'. Text was: {repr(text[:100])}")
-                continue
-
+                return []
             try:
-                item = json.loads(text)
-            except json.JSONDecodeError:
+                items = json.loads(text)
+                if not isinstance(items, list):
+                    return []
+                return items
+            except Exception:
+                return []
+
+    # For each topic, request multiple distinct questions
+    for t in topics_data:
+        if DEBUG: st.write(f"DEBUG: Generating {num_per_topic} questions for topic '{t['topic']}' in category '{t['category']}'")
+        # Try to get prompt template and example
+        prompt_template = None
+        example = None
+        try:
+            cursor.execute("""
+                           SELECT prompt_template, example
+                           FROM prompts
+                           WHERE LOWER(category) = LOWER(?)
+                             AND LOWER(topic) = LOWER(?)
+                           LIMIT 1;
+                           """, (t['category'], t['topic']))
+            row = cursor.fetchone()
+            if row:
+                prompt_template, db_example = row
+                if db_example:
+                    example = db_example
                 if DEBUG:
-                    st.write(f"DEBUG: JSON parse failed once, retrying sanitize pass for topic '{t['topic']}'")
-                text = re.sub(r"```(?:json)?|```", "", text)
-                text = re.sub(r"(?i)example json.*?\{", "{", text)
-                text = text.strip()
+                    st.write(f"DEBUG: Found DB prompt template for {t['topic']} ({t['category']})")
+        except Exception as e:
+            if DEBUG:
+                st.write(f"DEBUG: Failed to fetch prompt template for {t['topic']}: {e}")
 
-                # Skip if text still empty or too short
-                if not text or len(text.strip()) < 5:
-                    if DEBUG:
-                        st.write(f"DEBUG: JSON text still invalid/empty after sanitize for topic '{t['topic']}' → skipping")
-                    continue
+        # --- Normalize topic and clean up prompt_template if present ---
+        topic_clean = re.sub(r'[_\-]+', ' ', t['topic']).strip().title()
+        # Remove literal "in {topic}" from template if present
+        if prompt_template:
+            # Remove "in {topic}" or "in [topic]" (case-insensitive, with or without quotes)
+            prompt_template = re.sub(
+                r'in\s*\{?\s*topic\s*\}?\s*', 'in a sentence ', prompt_template, flags=re.IGNORECASE
+            )
+            # Remove doubled spaces
+            prompt_template = re.sub(r'\s{2,}', ' ', prompt_template)
+        # --- Build new composite prompt, category-aware and concise ---
+        if prompt_template:
+            prompt_inner = prompt_template.format(
+                topic=topic_clean,
+                category=t['category'],
+                question_focus=t['question_focus']
+            )
+        else:
+            prompt_inner = f"Generate grammar questions about {topic_clean}."
 
-                try:
-                    item = json.loads(text)
-                except json.JSONDecodeError as e:
-                    if DEBUG:
-                        st.write(f"DEBUG: JSON parsing failed again for topic '{t['topic']}' — raw text:\n{text}\nError: {e}")
-                    continue  # Skip instead of crashing
+        category_label = t['category'].replace('_', ' ').strip().title() if t['category'] else "English"
 
-            # Validate structure strictly
+        # This is leftover... just in case things go sideways it can be added back in
+#         base_prompt = f"""
+# You are a {category_label} tutor.
+#
+# Your task:
+# - Generate {num_per_topic} multiple-choice questions for 5th graders.
+# - Focus on the topic: {topic_clean} ({t['category']}).
+# - Use the following instructional context: "{prompt_inner}".
+# - Include one example for guidance: {example or 'None provided'}.
+# - Keep each question age-appropriate and clear.
+# - Each question must have exactly 4 options and one correct answer.
+# - Return ONLY valid JSON as an array of question objects with keys "topic", "question", "options", and "answer".
+# - No explanations or extra text.
+# """
+        persona = PROMPT_PERSONAS.get(t['category'], f"You are a 5th-grade {t['category'].replace('_', ' ')} tutor.")
+        prompt = build_prompt(
+            persona,
+            topic_clean,
+            t['category'],
+            t['question_focus'],
+            example,
+            num_per_topic
+        )
+        # prompt = base_prompt.strip()
+        if DEBUG:
+            st.write(f"🧠 DEBUG Topic: {t['topic']}")
+            st.write(f"🧩 DEBUG Category: {t['category']}")
+            st.write(f"🧾 DEBUG Question Focus: {t['question_focus']}")
+            st.write(f"📤 DEBUG Prompt to LLM (first 500 chars):\n{prompt[:500]}")
+        text = call_llm(prompt)
+        items = parse_llm_json_list(text)
+        # Fallback: try again if empty
+        if not items:
+            text2 = call_llm(prompt)
+            items = parse_llm_json_list(text2)
+
+        # Garbage filter function
+        def is_garbage_question(q: str):
+            q_clean = q.strip().lower()
+            # Meta-patterns
+            meta_patterns = [
+                r"which of the following sentences is correct",
+                r"choose the correct sentence",
+                r"what part of speech is",
+                r"which sentence is written correctly",
+            ]
+            for pat in meta_patterns:
+                if re.search(pat, q_clean):
+                    return True
+            # Reject if too short (< 6 words)
+            if len(q_clean.split()) < 6:
+                return True
+            # Reject if contains "following sentences"
+            if "following sentences" in q_clean:
+                return True
+            return False
+
+        # Post-process and deduplicate
+        for item in items:
+            # Validate structure
             if not isinstance(item, dict) or not all(k in item for k in ("question", "options", "answer")):
-                if DEBUG: st.write(f"DEBUG: Invalid or incomplete JSON for topic '{t['topic']}' → skipping")
                 continue
-
             # Clean any leftover phrasing from the question
             item["question"] = re.sub(
                 r"(?i)(question on|topic:|category:)\s*[A-Za-z_ ]+[:\-]*", "", item["question"]
             ).strip()
+            # Garbage filter
+            if is_garbage_question(item["question"]):
+                if DEBUG:
+                    st.write(f"DEBUG: Garbage question filtered out: {item['question']}")
+                continue
+            # Deduplication by question string
+            q_key = item["question"].strip()
+            if q_key in seen_questions:
+                if DEBUG:
+                    st.write(f"DEBUG: Duplicate question skipped for topic '{t['topic']}': {item['question']}")
+                continue
+            seen_questions.add(q_key)
             sentences.append(item)
-            if DEBUG: st.write(f"DEBUG: Added question for topic '{t['topic']}'")
+            if len(sentences) >= n:
+                break
+        if len(sentences) >= n:
+            break
+
+    # Debug summary printout after the for loop and before deduplication
+    if DEBUG:
+        st.write(f"DEBUG: Generated {num_per_topic} questions each for {len(selected_topics)} topics = {len(selected_topics) * num_per_topic} total (before filtering)")
 
     # --- Final guardrail: drop malformed or duplicate entries ---
     sentences = [
@@ -516,29 +587,16 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
         and len(s["options"]) >= 2
     ]
 
-    # --- Post-processing: flatten and balance across categories ---
-    # Avoid duplicate questions by using a set while preserving order (based on question string)
-    seen = set()
-    unique_questions = []
-    for q in sentences:
-        # Use question text as unique key if q is dict, else q itself
-        key = q["question"] if isinstance(q, dict) and "question" in q else str(q)
-        if key not in seen:
-            unique_questions.append(q)
-            seen.add(key)
-
     # Limit to requested count
-    sentences = unique_questions[:n]
+    sentences = sentences[:n]
 
-    # If still short, refill by sampling from other categories or re-query
-    # UI fallback: generate a readable header+summary for user clarity, not sent to LLM
-    if len(sentences) < n:
+    # If still short, refill by sampling from other topics or re-query
+    if len(sentences) < n and topics_data:
         import random
-        filler_topics = [t["topic"] for t in topics_data if t["topic"] not in [q["topic"] for q in sentences if isinstance(q, dict) and "topic" in q]]
+        filler_topics = [t["topic"] for t in topics_data if t["topic"] not in [q.get("topic") for q in sentences if isinstance(q, dict) and "topic" in q]]
         if DEBUG: st.write(f"DEBUG: Replenishing from topics {filler_topics}")
         while len(sentences) < n:
             t = random.choice(topics_data)
-            # Provide a clear header for user-facing UI only; not sent to LLM
             header = f"Question on {t['topic'].capitalize()} ({t['category']})"
             summary = f"{t['question_focus'].strip().rstrip('?')}?"
             sentences.append({

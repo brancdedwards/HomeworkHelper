@@ -1,0 +1,96 @@
+- id: 001
+  title: Implement dynamic persona system
+  description: >
+    Add a centralized persona dictionary (tutor tone) and a shared
+    prompt builder function used by all LLM calls.
+  status: pending
+  priority: high
+  owner: Brandon
+  related_files:
+    - llm_helpers.py
+  notes: |
+    This ensures consistent prompts and tone across categories.
+    Each persona should sound like a patient 5th-grade tutor.
+  timeline: short_term
+
+- id: 002
+  title: Fix grammar hint feedback
+  description: >
+    When a student selects the wrong answer, generate a contextual hint
+    explaining what their selected choice means rather than repeating
+    the correct answer.
+  status: pending
+  priority: high
+  owner: Brandon
+  related_files:
+    - llm_helpers.py
+    - grammar_practice.py
+  notes: |
+    Use get_grammar_hint() to define the student's selection.
+    Example:
+      "That's not quite right. 'Adverb' means a word that modifies a verb."
+    Add fallback text if definition lookup fails.
+  timeline: short_term
+
+- id: 003
+  title: Add progress tracking system
+  description: >
+    Store student attempts and performance data for analytics and reports.
+    Use a SQLite database table for durability and future dashboards.
+  status: planning
+  priority: high
+  owner: Brandon
+  related_files:
+    - db.py
+    - grammar_practice.py
+  design:
+    table_name: student_progress
+    fields:
+      - user_id
+      - category
+      - topic
+      - question
+      - selected_answer
+      - correct_answer
+      - is_correct
+      - attempts
+      - timestamp
+  reports:
+    - Accuracy by topic
+    - Weakest topics
+    - Average attempts
+    - Progress over time
+  timeline: long_term
+
+- id: 004
+  title: Add prompt unification and caching
+  description: >
+    Create a build_prompt() function shared between LLM helpers
+    to avoid duplicated text and reduce token usage.
+  status: pending
+  priority: medium
+  owner: Brandon
+  related_files:
+    - llm_helpers.py
+  notes: |
+    Use functools.lru_cache(maxsize=64) to store repeated prompts.
+    Ensures faster runs and consistent prompt phrasing.
+  timeline: short_term
+
+- id: 005
+  title: Implement punctuation normalization in grading
+  description: >
+    Add logic to strip punctuation from answers except when punctuation
+    is the explicit topic (e.g., question_mark, exclamation_point).
+    Use normalize_answer() to ensure grading fairness while preserving
+    accuracy for punctuation-related questions.
+  status: planning
+  priority: medium
+  owner: Brandon
+  related_files:
+    - grammar_practice.py
+    - llm_helpers.py
+  notes: |
+    Only strip punctuation when the category is not related to punctuation.
+    Example: 'dog.' should match 'dog', but '!' should remain distinct.
+  timeline: short_term
