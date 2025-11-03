@@ -18,7 +18,7 @@ from utils.db import get_prompt_template
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 yaml_path = os.path.join("data", "grammar_hints.yaml")
-DEBUG = False  # Set to False to disable debug logs
+DEBUG = False  # Enable debug logs for detailed tracing
 
 # ---------- Unified Prompt Builder and Tutor Personas ----------
 from functools import lru_cache
@@ -33,24 +33,37 @@ PROMPT_PERSONAS = {
 }
 
 @lru_cache(maxsize=64)
-def build_prompt(persona, topic, category, question_focus, example, num_per_topic=1):
-    """Constructs a consistent, category-aware LLM prompt."""
-    category_label = category.replace('_', ' ').title()
-    return f"""{persona}
+def build_prompt(persona, topic, category, question_focus, example, num_per_topic):
+    return f"""
+{persona}
 
-Your task:
-- Generate {num_per_topic} multiple-choice or fill-in-the-blank questions for 5th graders.
-- Focus on the topic: {topic} ({category_label}).
-- Focus area: {question_focus}.
-- Include one example for guidance: {example or 'None provided'}.
-- Each question must have either:
-  • exactly 4 multiple-choice options with one correct answer labeled under the key "answer", OR
-  • one fill-in-the-blank style question where the correct word or phrase is stored only under the "answer" key (not revealed in the prompt).
-- The blank should be represented by an underscore (____) or ellipsis (…) in the sentence.
-- Never include or hint at the answer inside the question text or options.
-- Keep each question short, age-appropriate, and clear.
-- Return ONLY valid JSON with keys "topic", "question", "options", and "answer".
-- Do not include explanations or commentary."""
+You are generating {num_per_topic} *multiple-choice* grammar questions about the topic **{topic}**, 
+which belongs to the category **{category}**.
+
+If you see curly braces like {{word}} or {{sentence}}, 
+treat them as variable placeholders — they represent example content. 
+Replace them naturally with simple, age-appropriate examples (e.g., "happy", "run", or "The dog barked."). 
+Do NOT display the braces or variable names in the question or options. 
+Do NOT explain that you replaced them.
+
+Each question must follow this JSON structure:
+
+{{
+  "topic": "{topic}",
+  "category": "{category}",
+  "question": "A single clear question that tests understanding of {topic}. Do NOT mention topic or category names.",
+  "options": ["Option A", "Option B", "Option C", "Option D"],
+  "answer": "The correct option text."
+}}
+
+Rules:
+1. Only generate multiple-choice questions — no fill-in-the-blank, true/false, or open-ended items.
+2. Never show curly braces, metadata, or variable names in the output.
+3. Stay strictly within {category} concepts. Use age-appropriate vocabulary (grades 4–7).
+4. Keep questions short, natural, and engaging.
+5. Include one guiding example: **{example}**
+6. Return ONLY valid JSON as an array of objects. No commentary, markdown, or explanations.
+"""
 
 # ---------- Core LLM Wrapper ----------
 def call_llm(prompt, model='gpt-4o-mini', temperature=0.2): #TODO: add subject as parameter (e.g. Math, grammar, etc)
@@ -90,7 +103,6 @@ def generate_sentences(n=5):
     """Generate a clean list of N simple sentences for grammar practice.
     Tries to parse a JSON array from the model; falls back to line-splitting.
     """
-    import json, re
 
     prompt = (
         "You are generating short practice sentences for a 5th grader. "
@@ -369,7 +381,7 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
 
     # Load concept map for category detection
     concept_map = load_concept_map()
-    # if DEBUG: st.write(f"DEBUG: Loaded concept map: {concept_map}")
+    if DEBUG: st.write(f"DEBUG: Loaded concept map: {concept_map}")
 
     # Compute how many questions per topic
     if len(active_topics) == 0:
@@ -409,7 +421,7 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
             st.session_state["last_category"] = t_category
             if DEBUG: st.write(f"DEBUG: Cached last_category (llm helpers) in session: {t_category}")
 
-    import json, re
+    # json and re are already imported at the top of the file; redundant here.
     # Helper function for parsing and cleaning
     def parse_llm_json_list(text):
         text = text.strip()
@@ -488,10 +500,11 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
         else:
             prompt_inner = f"Generate grammar questions about {topic_clean}."
 
-        category_label = t['category'].replace('_', ' ').strip().title() if t['category'] else "English"
+        category_value = t.get('category') or 'general'
+        category_label = category_value.replace('_', ' ').strip().title()
 
-        # This is leftover... just in case things go sideways it can be added back in
-#         base_prompt = f"""
+        # --- LEGACY PROMPT (for rollback or debugging) ---
+        # base_prompt = f"""
 # You are a {category_label} tutor.
 #
 # Your task:
@@ -505,13 +518,14 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
 # - No explanations or extra text.
 # """
         persona = PROMPT_PERSONAS.get(t['category'], f"You are a 5th-grade {t['category'].replace('_', ' ')} tutor.")
+        # This is where the
         prompt = build_prompt(
-            persona,
-            topic_clean,
-            t['category'],
-            t['question_focus'],
-            example,
-            num_per_topic
+            persona=persona,
+            topic=topic_clean,
+            category=t['category'],
+            question_focus=t['question_focus'],
+            example=example,
+            num_per_topic=num_per_topic
         )
         # prompt = base_prompt.strip()
         if DEBUG:
@@ -590,22 +604,16 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
     # Limit to requested count
     sentences = sentences[:n]
 
-    # If still short, refill by sampling from other topics or re-query
+    # If still short, skip filler generation to preserve quality
     if len(sentences) < n and topics_data:
-        import random
-        filler_topics = [t["topic"] for t in topics_data if t["topic"] not in [q.get("topic") for q in sentences if isinstance(q, dict) and "topic" in q]]
-        if DEBUG: st.write(f"DEBUG: Replenishing from topics {filler_topics}")
-        while len(sentences) < n:
-            t = random.choice(topics_data)
-            header = f"Question on {t['topic'].capitalize()} ({t['category']})"
-            summary = f"{t['question_focus'].strip().rstrip('?')}?"
-            sentences.append({
-                "topic": t["topic"],
-                "question": f"{header}: {summary}",
-                "options": [],
-                "answer": ""
-            })
-
+        if DEBUG:
+            st.write(f"⚠️ DEBUG: Only {len(sentences)} valid questions generated out of {n} requested; skipping filler placeholders to maintain quality.")
+    # If still short, warn user and show available questions
+    if len(sentences) < n and topics_data:
+        msg = f"Requested {n} questions, but only {len(sentences)} unique concepts were available. Showing all available questions."
+        st.warning(msg)
+        if DEBUG:
+            st.write(f"⚠️ DEBUG: {msg}")
     return sentences
 
 # ---------- PDF Export Function ----------
