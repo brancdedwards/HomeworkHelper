@@ -4,21 +4,24 @@
 # Centralized utilities for handling OpenAI API calls.
 # Includes text simplification, question generation, vocabulary explanations,
 # and grammar-related sentence/question generation.
+
 from typing import Any
-from jedi.api.classes import defined_names
+from config.logger import log
 from openai import OpenAI
 import os, yaml, re, json
 from dotenv import load_dotenv
 import streamlit as st
-from utils.concept_map_loader import load_concept_map, detect_category_for_topic, get_question_focus
+from utils.concept_map_loader import load_concept_map, get_question_focus
 from utils.db import get_prompt_template
+from utils.text_utils import normalize_answer
 
 
 # ---------- Setup ----------
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-yaml_path = os.path.join("data", "grammar_hints.yaml")
+yaml_path = os.path.join("data", "grammar_combined.yaml")
 DEBUG = False  # Enable debug logs for detailed tracing
+
 
 # ---------- Unified Prompt Builder and Tutor Personas ----------
 from functools import lru_cache
@@ -283,23 +286,27 @@ Example text:
 def get_grammar_hint(topic: str) -> str:
     """Retrieve grammar hint dynamically from grammar_hints.yaml."""
     import logging
-    topic = topic.lower().strip()
-    yaml_path = os.path.join("data", "grammar_combined.yaml")
+    # topic = topic.lower().strip()
+    st.write(f"DEBUG: (from llm helpers) topic: {topic}")
+    # yaml_path = os.path.join("data", "grammar_combined.yaml")
     if not os.path.exists(yaml_path):
-        return "Remember, think about how the word is used in the sentence."
+        st.write("DEBUG: yaml_path not detected")
+        return "Remember, (yaml_path not detected) think about how the word is used in the sentence."
 
     try:
         with open(yaml_path, "r", encoding="utf-8") as f:
             grammar_data = yaml.safe_load(f)
+            # st.write(f"DEBUG: grammar_data: {grammar_data}")
             if not isinstance(grammar_data, dict):
                 st.write("DEBUG: Invalid grammar_hints.yaml structure.", grammar_data)
-                return "Remember, think about how the word is used in the sentence."
+                return "Remember,(found yaml) think about how the word is used in the sentence."
     except Exception as e:
         st.write("DEBUG: Failed to read or parse YAML", str(e))
-        return "Remember, think about how the word is used in the sentence."
+        return "Remember, (exception) think about how the word is used in the sentence."
 
     if topic in grammar_data:
         data = grammar_data[topic]
+        st.write(f"DEBUG: data: {data}")
         definition = str(data.get("definition", "")).strip()
         examples_list = data.get("examples", [])
         examples_md = ""
@@ -311,7 +318,8 @@ def get_grammar_hint(topic: str) -> str:
         hint_md = f"Remember, {definition.lower()}{examples_md}{link_md}"
         return hint_md
     else:
-        return "Remember, think about how the word is used in the sentence."
+        # on 11/3 this is being returned... why?
+        return f"Remember, think about how the word is used in the sentence for {topic}."
 
 # ---------- Active Topics Integration ----------
 def get_active_topics(subject="grammar"):
@@ -329,7 +337,7 @@ def get_active_topics(subject="grammar"):
 @st.cache_data(ttl=300)
 def get_available_categories(conn=None):
     """
-    Returns a list of distinct categories from concept_map that have ACTIVE topics.
+    Returns a list of distinct categories from topics that have ACTIVE topics.
     Used by the UI to populate the category dropdown.
     """
     from utils.db import get_connection
@@ -338,13 +346,15 @@ def get_available_categories(conn=None):
         conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT DISTINCT cm.category
-        FROM concept_map cm
-        JOIN topics t ON cm.topic = t.name
-        WHERE t.active = 1
-          AND cm.category IS NOT NULL
-          AND TRIM(cm.category) != ''
-        ORDER BY LOWER(cm.category)
+        select distinct
+            t.category
+            
+            from topics t
+            where t.active = 1
+                and t.category is not null
+                and TRIM(t.category) != ''
+            order by lower(t.category)
+
     """)
     rows = cur.fetchall()
     return [r[0] for r in rows] if rows else []
@@ -360,58 +370,80 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
     if conn is None or not hasattr(conn, "cursor"):
         conn = get_connection()
     cursor = conn.cursor()
-    # cursor.execute("SELECT cm.topic FROM concept_map cm join topics t on cm.topic = t.name WHERE t.active = 1;")
     if category:
         cursor.execute("""
-                       SELECT cm.topic
-                       FROM concept_map cm
-                                JOIN topics t ON cm.topic = t.name
-                       WHERE LOWER(cm.category) = LOWER(?)
+                       SELECT t.name FROM topics t 
+                       WHERE LOWER(t.category) = LOWER(?)
                          AND t.active = 1;
                        """, (category,))
     else:
         cursor.execute("""
-                       SELECT cm.topic
-                       FROM concept_map cm
-                                JOIN topics t ON cm.topic = t.name
-                       WHERE t.active = 1;
+                        SELECT t.name
+                        FROM topics t
+                           WHERE t.active = 1;
                        """)
     active_topics = [row[0] for row in cursor.fetchall()]
     # if DEBUG: st.write(f"DEBUG: Active topics: {active_topics}")
 
+    # Immediately after fetching active_topics: apply new selection logic
+    available_count = len(active_topics)
+
+    if category:
+        selected_topics = active_topics[:n]
+        if available_count < n:
+            st.info(f"Only {available_count} questions available for category '{category}'. Showing all available.")
+    else:
+        import random
+        if available_count < n:
+            filler = random.choices(active_topics, k=n - available_count)
+            selected_topics = active_topics + filler
+        else:
+            selected_topics = random.sample(active_topics, n)
+
     # Load concept map for category detection
     concept_map = load_concept_map()
-    if DEBUG: st.write(f"DEBUG: Loaded concept map: {concept_map}")
+    if DEBUG:
+        st.write(f"DEBUG: Loaded concept map: {concept_map}")
+        log.debug(f"Loaded concept map: {concept_map}")
 
     # Compute how many questions per topic
-    if len(active_topics) == 0:
+    if len(selected_topics) == 0:
         return []
-    num_per_topic = max(1, n // len(active_topics))
-    if DEBUG: st.write(f"DEBUG: Number of questions per topic: {num_per_topic}")
+    num_per_topic = max(1, n // len(selected_topics))
+    if DEBUG:
+        st.write(f"DEBUG: Number of questions per topic: {num_per_topic}")
+        log.debug(f"Number of questions per topic: {num_per_topic}")
 
-    # If there are more topics than n, sample n topics; else use all
-    if len(active_topics) > n:
-        selected_topics = random.sample(active_topics, n)
-    else:
-        selected_topics = active_topics
-    if DEBUG: st.write(f"DEBUG: Selected topics: {selected_topics}")
+    if DEBUG:
+        st.write(f"DEBUG: Selected topics: {selected_topics}")
+        log.debug(f"Selected topics: {selected_topics}")
     sentences = []
     seen_questions = set()
 
     from utils.concept_map_db import get_concept
     topics_data = []
     for topic in selected_topics:
-        if DEBUG: st.write(f"DEBUG from llm_helpers (b4 category/question_focus lookup): Topic: {topic}")
+        if DEBUG:
+            st.write(f"DEBUG from llm_helpers (b4 category/question_focus lookup): Topic: {topic}")
+            log.debug(f"From llm_helpers (b4 category/question_focus lookup): Topic: {topic}")
         # Try to get from DB first
         concept_record = get_concept(topic, subject="grammar")
         if concept_record:
             t_category = concept_record.get("category") if isinstance(concept_record, dict) else getattr(concept_record, "category", None)
             question_focus = concept_record.get("question_focus") if isinstance(concept_record, dict) else getattr(concept_record, "question_focus", None)
-            if DEBUG: st.write(f"DEBUG Topic: {topic} - used DB record for category/question_focus. Category: {t_category}, Question Focus: {question_focus}")
+            if DEBUG:
+                st.write(
+                    f"DEBUG Topic: {topic} - used DB record for category/question_focus. Category: {t_category}, Question Focus: {question_focus}")
+                log.debug(
+                    f"Topic: {topic} - used DB record for category/question_focus. Category: {t_category}, Question Focus: {question_focus}")
         else:
             # t_category = detect_category_for_topic(topic, subject="grammar")
             question_focus = get_question_focus(topic, subject="grammar")
-            if DEBUG: st.write(f"DEBUG Topic: {topic} - used fallback detect_category/get_question_focus. Category: {t_category}, Question Focus: {question_focus}")
+            if DEBUG:
+                st.write(
+                    f"DEBUG Topic: {topic} - used fallback detect_category/get_question_focus. Category: {t_category}, Question Focus: {question_focus}")
+                log.debug(
+                    f"Topic: {topic} - used fallback detect_category/get_question_focus. Category: {t_category}, Question Focus: {question_focus}")
         if question_focus:
             topics_data.append({
                 "topic": topic,
@@ -419,7 +451,9 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
                 "question_focus": question_focus,
             })
             st.session_state["last_category"] = t_category
-            if DEBUG: st.write(f"DEBUG: Cached last_category (llm helpers) in session: {t_category}")
+            if DEBUG:
+                st.write(f"DEBUG: Cached last_category (llm helpers) in session: {t_category}")
+                log.debug(f"Cached last_category (llm helpers) in session: {t_category}")
 
     # json and re are already imported at the top of the file; redundant here.
     # Helper function for parsing and cleaning
@@ -457,7 +491,10 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
 
     # For each topic, request multiple distinct questions
     for t in topics_data:
-        if DEBUG: st.write(f"DEBUG: Generating {num_per_topic} questions for topic '{t['topic']}' in category '{t['category']}'")
+        if DEBUG:
+            st.write(
+                f"DEBUG: Generating {num_per_topic} questions for topic '{t['topic']}' in category '{t['category']}'")
+            log.debug(f"Generating {num_per_topic} questions for topic '{t['topic']}' in category '{t['category']}'")
         # Try to get prompt template and example
         prompt_template = None
         example = None

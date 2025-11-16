@@ -163,9 +163,10 @@ transition_words:
   examples: ["however", "therefore", "meanwhile", "in addition"]
   link: "https://www.grammar-monster.com/lessons/transition_words.htm"
 
-declarative_sentence:
+declarative sentence:
   definition: "A declarative sentence makes a statement and ends with a period."
   examples: ["The sky is blue.", "I like reading books."]
+  link: "https://www.grammar-monster.com/glossary/declarative_sentence.htm"
 
 interrogative_sentence:
   definition: "An interrogative sentence asks a question and ends with a question mark."
@@ -181,3 +182,158 @@ exclamatory_sentence:
   definition: "An exclamatory sentence expresses strong emotion and ends with an exclamation mark."
   examples: ["Wow, that was amazing!", "I can’t believe we won!"]
   link: "https://www.grammar-monster.com/glossary/exclamatory_sentence.htm"
+
+active_vs_passive_voice:
+  definition: "In active voice the subject performs the action, while in passive voice the subject receives the action. Active voice is usually clearer and more direct."
+  examples: ["The cat chased the mouse.", "The mouse was chased by the cat."]
+  link: "https://www.grammarly.com/blog/active-vs-passive-voice/"
+
+alliteration:
+  definition: "Alliteration is the repetition of the same beginning consonant sound in a series of words."
+  examples: ["Peter Piper picked a peck of pickled peppers.", "Sally sells seashells by the seashore."]
+  link: "https://www.grammarly.com/blog/literary-devices/alliteration/"
+
+article:
+  definition: "An article is a word (a, an, or the) used before a noun to indicate whether it refers to something specific or general."
+  examples: ["A dog barked loudly.", "The dog barked loudly."]
+  link: "https://www.englishclub.com/grammar/articles.htm"
+
+clarity:
+  definition: "Clarity means expressing ideas so they are easy for the reader to understand without confusion or ambiguity."
+  examples: ["Use precise language and short sentences to improve clarity.", "Avoid jargon when explaining complex topics."]
+  link: "https://writingcenter.unc.edu/tips-and-tools/clarity/"
+
+coherence:
+  definition: "Coherence is the logical connection and smooth flow between ideas in writing so the reader can follow easily."
+  examples: ["First, we gathered data. Then, we analyzed it. Finally, we reported our findings.", "Each paragraph should clearly connect to the next."]
+  link: "https://writingcommons.org/article/coherence/"
+
+compound_complex_sentence:
+  definition: "A compound-complex sentence contains at least two independent clauses and one or more dependent clauses."
+  examples: ["Because she studied hard, she passed the exam, and she celebrated after.", "The dog barked when the mailman came, and the cat hid under the couch."]
+  link: "https://writingcenter.unc.edu/tips-and-tools/compound-complex-sentences/"
+
+conciseness:
+  definition: "Conciseness means using only the necessary words to convey an idea clearly and directly, avoiding redundancy or filler."
+  examples: ["Wordy: In my opinion, I believe that... | Concise: I believe...", "Wordy: We met and then afterwards left. | Concise: We left."]
+  link: "https://writingcenter.unc.edu/tips-and-tools/conciseness/"
+
+context_clues:
+  definition: "Context clues are hints found within a sentence or paragraph that help the reader determine the meaning of an unfamiliar word."
+  examples: ["She felt elated, or extremely happy, after hearing the good news.", "The arboretum, a place where trees are grown, was beautiful."]
+  link: "https://www.readingrockets.org/topics/vocabulary/articles/types-context-clues"
+
+declarative_sentence:
+  definition: "A declarative sentence makes a statement and ends with a period."
+  examples: ["The sky is blue.", "I love learning grammar."]
+  link: "https://www.grammar-monster.com/glossary/declarative_sentence.htm"
+
+exclamation_point:
+  definition: "An exclamation point is used at the end of a sentence to show strong emotion or excitement."
+  examples: ["Watch out!", "That’s amazing!"]
+  link: "https://www.grammar-monster.com/lessons/exclamation_marks.htm"
+
+homophone:
+  definition: "A homophone is a word that sounds the same as another word but has a different meaning and spelling."
+  examples: ["their/there/they’re", "to/too/two"]
+  link: "https://www.grammar-monster.com/glossary/homophones.htm"
+
+hyperbole:
+  definition: "Hyperbole is an intentional exaggeration used to emphasize a point or create humor."
+  examples: ["I’ve told you a million times!", "This bag weighs a ton."]
+  link: "https://www.grammarly.com/blog/hyperbole/"
+
+hyphen_dash:
+  definition: "A hyphen (-) connects words or parts of words, while a dash (– or —) separates phrases or adds emphasis."
+  examples: ["Mother-in-law (hyphen)", "She was late — again! (em dash)"]
+  link: "https://www.grammar-monster.com/lessons/hyphens_and_dashes.htm"
+
+idiom:
+  definition: "An idiom is a phrase whose meaning cannot be understood from the literal definitions of the words."
+  examples: ["Break the ice", "Hit the sack"]
+  link: "https://www.grammarly.com/blog/idioms/"
+
+modifier:
+  definition: "A modifier is a word or phrase that describes or limits the meaning of another word in a sentence."
+  examples: ["The red car sped away.", "Running quickly, she caught the bus."]
+  link: "https://www.grammar-monster.com/lessons/modifiers.htm"
+
+multiple_meanings:
+  definition: "Some words have multiple meanings depending on the context in which they are used."
+  examples: ["The word 'bark' can mean the sound a dog makes or the outer layer of a tree.", "He nailed the test. (did very well / literally hit with a nail)"]
+  link: "https://www.merriam-webster.com/words-at-play/words-with-multiple-meanings"
+
+onomatopoeia:
+  definition: "Onomatopoeia is the use of words that imitate natural sounds."
+  examples: ["buzz", "crash", "bang", "sizzle"]
+  link: "https://www.grammarly.com/blog/onomatopoeia/"
+
+parallel_structure:
+  definition: "Parallel structure means using the same pattern of words to show that two or more ideas are of equal importance."
+  examples: ["She likes running, swimming, and biking.", "He wanted to learn, to grow, and to succeed."]
+  link: "https://writingcenter.unc.edu/tips-and-tools/parallel-structure/"
+
+parentheses:
+  definition: "Parentheses are used to include additional information or clarify a point without changing the main meaning."
+  examples: ["He finally answered (after taking five minutes).", "The cat (which was sleeping) woke up suddenly."]
+  link: "https://www.grammar-monster.com/lessons/parentheses.htm"
+
+period:
+  definition: "A period ends a declarative or imperative sentence and shows a full stop."
+  examples: ["She walked to the store.", "Turn off the lights."]
+  link: "https://www.grammar-monster.com/lessons/periods.htm"
+
+personification:
+  definition: "Personification is giving human traits or actions to non-human things or abstract ideas."
+  examples: ["The wind whispered through the trees.", "The sun smiled down on us."]
+  link: "https://www.grammarly.com/blog/personification/"
+
+question_mark:
+  definition: "A question mark is used at the end of a sentence to indicate a direct question."
+  examples: ["Where are you going?", "Did you finish your homework?"]
+  link: "https://www.grammar-monster.com/lessons/question_marks.htm"
+
+redundancy:
+  definition: "Redundancy means using words or phrases that repeat the same idea unnecessarily."
+  examples: ["Each and every person", "Final outcome", "Free gift"]
+  link: "https://writingcenter.unc.edu/tips-and-tools/conciseness/#redundancy"
+
+root_word:
+  definition: "A root word is the base part of a word that gives it its main meaning."
+  examples: ["act (action, actor)", "form (transform, reform)"]
+  link: "https://www.grammar-monster.com/glossary/root_word.htm"
+
+sentence_fragment:
+  definition: "A sentence fragment is an incomplete sentence missing a subject, verb, or complete thought."
+  examples: ["Because I was late.", "After the storm."]
+  link: "https://www.grammar-monster.com/lessons/sentence_fragments.htm"
+
+sentence_variety:
+  definition: "Sentence variety means using sentences of different lengths and structures to make writing more interesting."
+  examples: ["I ran. I sprinted as fast as I could. My heart pounded in my chest."]
+  link: "https://writingcenter.unc.edu/tips-and-tools/sentence-variety/"
+
+simple_sentence:
+  definition: "A simple sentence has one independent clause and expresses a complete thought."
+  examples: ["The dog barked.", "I love reading."]
+  link: "https://www.grammar-monster.com/lessons/simple_sentences.htm"
+
+tone:
+  definition: "Tone refers to the writer’s attitude toward the subject or audience, conveyed through word choice and style."
+  examples: ["Serious", "Humorous", "Sarcastic"]
+  link: "https://writingcenter.unc.edu/tips-and-tools/tone-and-style/"
+
+transitions:
+  definition: "Transitions are words or phrases that connect ideas smoothly between sentences or paragraphs."
+  examples: ["however", "therefore", "meanwhile", "in contrast"]
+  link: "https://writingcenter.unc.edu/tips-and-tools/transition-words/"
+
+verb_tense:
+  definition: "Verb tense shows the time of an action or state of being—past, present, or future."
+  examples: ["I walk to school. (present)", "I walked to school. (past)", "I will walk to school. (future)"]
+  link: "https://www.grammar-monster.com/lessons/verb_tenses.htm"
+
+word_choice:
+  definition: "Word choice means selecting precise and effective words that match the writer's intent and tone."
+  examples: ["Use 'essential' instead of 'very important'.", "Choose vivid verbs like 'sprinted' instead of 'ran fast'."]
+  link: "https://writingcenter.unc.edu/tips-and-tools/word-choice/"

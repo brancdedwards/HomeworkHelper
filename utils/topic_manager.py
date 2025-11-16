@@ -1,6 +1,13 @@
 import datetime, os, yaml, sys, streamlit as st, sqlite3
 from datetime import datetime
 
+def normalize_db_topic(name: str) -> str:
+    """Convert snake_case → space case for DB consistency."""
+    return name.strip().lower().replace("_", " ")
+
+def normalize_yaml_key(name: str) -> str:
+    """Convert space case → snake_case if ever needed."""
+    return name.strip().lower().replace(" ", "_")
 
 DB_PATH = "data/homework_helper.db"
 # DB_PATH = os.path.join(os.path.dirname(__file__), "..", "/data/homework_helper.db")
@@ -47,64 +54,90 @@ def sync_topics_to_concepts():
 
 
 def sync_yaml_to_db():
+    """
+    Import grammar hints from YAML into the SQLite grammar_hints table.
+    Automatically creates the table if it does not exist.
+    """
     st.write("🔍 Using database:", os.path.abspath(DB_PATH))
-    """Sync topics from a YAML file into the SQLite topics table."""
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
+
+    # Ensure grammar_hints table exists
+    # cur.execute("""
+    #     CREATE TABLE IF NOT EXISTS grammar_hints (
+    #         id INTEGER PRIMARY KEY AUTOINCREMENT,
+    #         topic TEXT UNIQUE NOT NULL,
+    #         definition TEXT,
+    #         examples TEXT,
+    #         link TEXT,
+    #         category TEXT DEFAULT 'grammar',
+    #         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    #         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    #     )
+    # """)
+
     _YAML_PATH = "data/grammar_combined.yaml"
-
-    # Load YAML
     with open(_YAML_PATH, "r") as f:
-        topics = yaml.safe_load(f)
+        hints = yaml.safe_load(f)
 
-    print(f"Loaded {len(topics)} topics from YAML")
+    # Sync to topics table
+    cur.execute("SELECT name FROM topics")
+    existing_topics = {row[0] for row in cur.fetchall()}
+
+    for topic_name, details in hints.items():
+        # topic_name: "adjective", "adverb", ...
+        # details: dict with category, question_focus, definition, etc.
+        normalized = normalize_db_topic(topic_name)
+        category = normalize_db_topic(details.get("category", "")) if details.get("category") else ""
+        question_focus = details.get("question_focus", "").strip()
+        # examples is handled later
+        if normalized not in existing_topics:
+            cur.execute(
+                # "INSERT INTO topics (name, subject, active, grade_level, last_seen_date, category, question_focus, example) VALUES (?, ?, 1, 5, ?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET last_seen_date = ?, category = ?, question_focus = ?, example = ?",
+                "INSERT INTO topics (name, subject, active, grade_level, last_seen_date, category, question_focus, example) VALUES (?, ?, 1, 5, ?, ?, ?, ?)",
+
+                (normalized, "grammar", datetime.now().isoformat(), category, question_focus, details.get("examples", ""))
+
+            )
+
+    st.write(f"Loaded {len(hints)} topics from YAML")
 
     inserted, updated, skipped = 0, 0, 0
 
-    for topic_name, details in topics.items():
-        subject = "grammar"  # Adjust as needed
+    for topic_name, details in hints.items():
+        normalized = normalize_db_topic(topic_name)
+        definition = details.get("definition", "")
+        raw_examples = details.get("examples", [])
+        if isinstance(raw_examples, str):
+            raw_examples = [raw_examples]
+        elif not isinstance(raw_examples, list):
+            raw_examples = []
+
+        examples = " ".join(e.replace("\r", "").replace("\n", " ").strip() for e in raw_examples)
+        link = details.get("link", "")
         now = datetime.now().isoformat()
 
         # Check if topic exists
-        cur.execute("SELECT id FROM topics WHERE name = ?", (topic_name,))
+        cur.execute("SELECT id FROM grammar_hints WHERE topic = ?", (normalized,))
         result = cur.fetchone()
 
         if result:
-            # Update
+            # Update existing entry
             cur.execute("""
-                        UPDATE topics
-                        SET subject        = ?,
-                            grade_level    = ?,
-                            active         = 0,
-                            last_seen_date = ?,
-                            updated_at     = ?
-                        WHERE id = ?
-                        """, (subject, 5, now, now, result[0]))
+                UPDATE grammar_hints
+                SET definition = ?, examples = ?, link = ?, updated_at = ?
+                WHERE id = ?
+            """, (definition, examples, link, now, result[0]))
             updated += 1
             print(f"🔄 Updated: {topic_name}")
         else:
-            # Insert
+            # Insert new entry
             cur.execute("""
-                        INSERT INTO topics (name, subject, grade_level, active, last_seen_date, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                        """, (topic_name, subject, None, 1, now, now))
+                INSERT INTO grammar_hints (topic, definition, examples, link)
+                VALUES (?, ?, ?, ?)
+            """, (normalized, definition, examples, link))
             inserted += 1
             print(f"✅ Inserted: {topic_name}")
-
-        # Sync to concept_map as well
-        cur.execute("SELECT id FROM concept_map WHERE LOWER(topic) = LOWER(?)", (topic_name,))
-        concept_exists = cur.fetchone()
-        if concept_exists:
-            cur.execute("""
-                UPDATE concept_map
-                SET category = ?, question_focus = ?, subject = ?
-                WHERE id = ?
-            """, (details.get("category", ""), details.get("question_focus", ""), subject, concept_exists[0]))
-        else:
-            cur.execute("""
-                INSERT INTO concept_map (subject, category, topic, question_focus)
-                VALUES (?, ?, ?, ?)
-            """, (subject, details.get("category", ""), topic_name, details.get("question_focus", "")))
 
     conn.commit()
     conn.close()
@@ -113,8 +146,7 @@ def sync_yaml_to_db():
     print(f"✅ Inserted: {inserted}")
     print(f"🔄 Updated: {updated}")
     print(f"⚠️ Skipped: {skipped}")
-    return topics
-
+    return hints
 # Example run:
 # sync_yaml_to_topics("data/grammar_combined.yaml", "data/homework_helper.db")
 
@@ -176,7 +208,7 @@ def update_topics(parsed_topics, yaml_dir="data/"):
 
     for topic in parsed_topics:
         subject = topic["subject"]
-        name = topic["topic"].lower().replace(" ", "_")
+        name = topic["topic"].lower().replace("_", " ")
 
         yaml_path = os.path.join(yaml_dir, f"{subject}_hints.yaml")
 

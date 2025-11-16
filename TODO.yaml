@@ -1,3 +1,44 @@
+# Quick Wins (Refactor Focus)
+- id: QW-001
+  title: Quick Wins Overview
+  description: >
+    Low-hanging fruit refactors that deliver immediate improvements
+    with minimal disruption or dependencies.
+  items:
+    - Simplify random topic generation logic (#006, #007)
+    - Remove deprecated concept_map files and imports (#012)
+    - Add unified logging helper (#011)
+    - Normalize punctuation in grading (#005)
+    - Add database connection helper in db.py (#008 partial)
+    - Add cached prompt builder to llm_helpers.py (#004)
+  priority: high
+  timeline: short_term
+  owner: Brandon
+
+- id: QW-002
+  title: Create Config Directory and Core Modules
+  description: >
+    Add a modular configuration directory (config/) to manage global
+    app settings, logging, and debug tools cleanly.
+  status: planning
+  priority: medium
+  owner: Brandon
+  related_files:
+    - config/logger.py
+    - config/debug.py
+    - config/settings.py
+  subtasks:
+    - Create config/logger.py for centralized logging setup.
+    - Create config/debug.py with global DEBUG_MODE flag and helper.
+    - Create config/settings.py for shared constants (paths, defaults).
+  notes: |
+    All modules should import from config/ instead of defining local constants.
+    Example usage:
+      from config.logger import log
+      from config.settings import DB_PATH
+      from config.debug import debug_print
+  timeline: short_term
+
 - id: 001
   title: Implement dynamic persona system
   description: >
@@ -94,3 +135,140 @@
     Only strip punctuation when the category is not related to punctuation.
     Example: 'dog.' should match 'dog', but '!' should remain distinct.
   timeline: short_term
+
+
+- id: 006
+  title: Generate random topics when mode = "Generate at random"
+  description: >
+    Add logic to generate random topics to meet the full threshold of what user selected.
+  status: planning
+  priority: medium
+  owner: Brandon
+  related_files:
+    - grammar_practice.py
+  notes:
+    When mode = "Generate at random",
+    the generator should sample topics (with replacement) until the
+    total count (n) is reached — even if the DB has fewer unique topics.
+  timeline: short_term
+
+- id: 007
+  title: Add topic refill logic fix
+  description: >
+    Refactor topic refill logic in grammar_practice.py to ensure that
+    when fewer topics exist than requested, the app automatically fills
+    with recycled topics until the desired count is met.
+  status: planning
+  priority: medium
+  owner: Brandon
+  related_files:
+    - grammar_practice.py
+  notes: |
+    Avoid duplicate warnings like "requested 10, only 7 exist".
+    Use random.choices instead of random.sample for replacement sampling.
+  timeline: short_term
+
+- id: 008
+  title: Consolidate database operations
+  description: >
+    Move all database-related queries and connections into db.py.
+    Remove direct SQLite calls from grammar_practice.py, topic_manager.py,
+    and llm_helpers.py.
+  status: planning
+  priority: medium
+  owner: Brandon
+  related_files:
+    - db.py
+    - grammar_practice.py
+    - topic_manager.py
+    - llm_helpers.py
+  notes: |
+    Ensures a single source of truth for DB logic.
+    Simplifies future migration to PostgreSQL.
+  timeline: medium_term
+
+- id: 009
+  title: Add CRUD admin interface for grammar_hints
+  description: >
+    Build a Streamlit-based admin UI to manage grammar_hints, topics,
+    and prompts with full CRUD support.
+  status: planning
+  priority: medium
+  owner: Brandon
+  related_files:
+    - admin_standards.py
+    - topic_manager.py
+    - db.py
+  notes: |
+    Include search, edit, and add functionality.
+    Validate topic uniqueness and auto-sync with DB.
+  timeline: long_term
+
+- id: 010
+  title: Implement attempt tracking and analytics
+  description: >
+    Expand the attempts table and integrate with the grammar practice workflow.
+    Track total attempts, hints used, accuracy rate, and session timestamps.
+  status: planning
+  priority: high
+  owner: Brandon
+  related_files:
+    - db.py
+    - grammar_practice.py
+  notes: |
+    Store all attempt details and expose analytics endpoints for:
+    - Accuracy by topic
+    - Average attempts
+    - Progress over time
+  timeline: medium_term
+
+- id: 011
+  title: Add logging utility
+  description: >
+    Replace scattered print() and st.write() debug statements with
+    a unified logging helper supporting verbosity levels (DEBUG, INFO, ERROR).
+  status: planning
+  priority: low
+  owner: Brandon
+  related_files:
+    - helpers/logging.py
+    - grammar_practice.py
+    - llm_helpers.py
+  notes: |
+    Use Python’s built-in logging with Streamlit compatibility.
+    Optional: add toggle to enable/disable logging per module.
+  timeline: medium_term
+
+- id: 012
+  title: Refactor legacy concept_map code
+  description: >
+    Fully remove concept_map_db.py and related imports.
+    Verify that all concept retrieval logic references grammar_hints or topics instead.
+  status: pending
+  priority: high
+  owner: Brandon
+  related_files:
+    - concept_map_db.py
+    - topic_manager.py
+    - llm_helpers.py
+  notes: |
+    This file is deprecated and should be replaced by the grammar_hints table.
+    Verify that no module still imports or queries concept_map.
+  timeline: short_term
+
+- id: 013
+  title: Add future prompt fields to topics table
+  description: >
+    Consider adding `prompt_template` and `prompt_style` fields to the topics
+    table to support per-topic LLM prompt generation and formatting control.
+  status: backlog
+  priority: low
+  owner: Brandon
+  related_files:
+    - topic_manager.py
+    - llm_helpers.py
+    - db.py
+  notes: |
+    These fields are optional but will enable automated prompt construction and
+    fine-grained question style control for each topic in the future.
+  timeline: long_term

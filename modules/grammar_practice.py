@@ -1,8 +1,32 @@
 import streamlit as st
 from utils.llm_helpers import generate_grammar_question, get_grammar_hint, generate_sentences_from_topics, get_available_categories
 from utils.db import log_attempt
+from config.logger import log
+from utils.text_utils import normalize_answer
 
 DEBUG = False  # Set to False to disable debug logs
+
+def get_hint_topic(selected_answer, question_topic):
+    from utils.llm_helpers import get_grammar_hint
+    st.write(f"DEBUG (hint resolver): trying selected='{selected_answer}', fallback='{question_topic}'")
+    log.debug(f"DEBUG (hint resolver): trying selected='{selected_answer}', fallback='{question_topic}'")
+
+    # Step 1: Try selected answer
+    hint = get_grammar_hint(selected_answer)
+    st.write(f"DEBUG (hint returned): hint: {hint}")
+    log.debug(f"DEBUG (hint returned): hint: {hint}")
+    if hint and not hint.lower().startswith("Remember, think about how the word is used"):
+        if not any(kw in hint.lower() for kw in ["sentence", "example", "word", "topic"]):
+            return hint
+
+    # Step 2: Fallback to actual topic
+    if question_topic:
+        fallback_hint = get_grammar_hint(question_topic)
+        if fallback_hint and "not quite right" not in fallback_hint.lower():
+            return fallback_hint
+
+    # Step 3: Final fallback
+    return "That's not quite right! Remember to think about how punctuation or structure affects the sentence."
 
 def show():
     st.title("📘 Grammar Practice")
@@ -131,17 +155,24 @@ def show():
                     st.session_state[f"ans_{i}"] = current_choice
                     st.session_state[f"submitted_{i}"] = True
 
-                    if current_choice == question["answer"]:
+                    if normalize_answer(current_choice, question.get("topic", "")) == normalize_answer(question["answer"], question.get("topic", "")):
                         st.session_state[f"hint_{i}"] = "Correct! 🎉"
                         st.session_state[f"correct_{i}"] = True
                         is_correct = True
                     else:
                         topic = current_choice.lower().strip()
+                        question_topic = question.get("topic")
+                        st.write(f"DEBUG: topic: {topic}")
+                        log.debug(f"DEBUG: topic: {topic}")
+
                         if DEBUG:
                             st.write(f"DEBUG topic: {topic}")
-                        hint = get_grammar_hint(topic)
+                            log.debug(f"DEBUG topic: {topic}")
+                        st.write(f"DEBUG: topic: {topic}, question_topic: {question_topic}")
+                        log.debug(f"DEBUG: topic: {topic}, question_topic: {question_topic}")
+                        hint = get_hint_topic(topic, question_topic)
                         st.session_state[f"hint_{i}"] = (
-                            f"That's not quite right. {hint}"
+                            f"That's not quite right (grammar_practice hint). {hint}"
                             if hint
                             else f"That's not quite right! A {topic} usually plays a specific role in the sentence."
                         )

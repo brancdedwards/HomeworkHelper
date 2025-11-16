@@ -1,7 +1,3 @@
-
-
-
-
 adjective:
   category: parts_of_speech
   question_focus: "Which word describes a noun?"
@@ -470,3 +466,87 @@ exclamatory_sentence:
   definition: "An exclamatory sentence expresses strong feeling and ends with an exclamation point."
   examples: "What a beautiful day!"
   link: "https://www.grammarly.com/blog/exclamatory-sentence/"
+
+its_vs_its:
+  category: grammar_mechanics
+  question_focus: "Which sentence uses 'its/it's' correctly?"
+  definition: "'It's' means 'it is' or 'it has.' 'Its' shows possession."
+  examples: "'It's raining.' 'The dog wagged its tail.'"
+  link: "https://www.grammarly.com/blog/its-vs-its/"
+
+contractions:
+  category: grammar_mechanics
+  question_focus: "Which contraction is formed correctly?"
+  definition: "A contraction is a shortened form of two words using an apostrophe."
+  examples: "they + will = they’ll, I + am = I’m"
+  link: "https://www.grammarly.com/blog/contractions/"
+
+quotation_mark_forms:
+  category: punctuation
+  question_focus: "Which quotation format is correct for this dialogue?"
+  definition: "Quotation marks show spoken words. Tags may appear before, after, or in the middle of the quote."
+  examples: "Form A: \"Let's go,\" said Ben. Form B: Ben said, \"Let's go.\" Form C: \"Let's go,\" Ben said, \"before it rains.\""
+  link: "https://www.grammarly.com/blog/quotation-marks/"
+
+plural_nouns_rules:
+  category: grammar_mechanics
+  question_focus: "Which plural form is correct?"
+  definition: "Plural nouns follow spelling patterns depending on word ending."
+  examples: "fox → foxes, baby → babies, leaf → leaves"
+  link: "https://www.grammarly.com/blog/plural-nouns/"
+
+comparative_adjectives:
+  category: grammar_mechanics
+  question_focus: "Which adjective uses the correct comparative form?"
+  definition: "Comparative adjectives compare two things. Patterns depend on syllables."
+  examples: "big → bigger, lovely → more lovely"
+  link: "https://www.grammarly.com/blog/comparative-and-superlative-adjectives/"
+
+superlative_adjectives:
+  category: grammar_mechanics
+  question_focus: "Which adjective uses the correct superlative form?"
+  definition: "Superlatives compare three or more things."
+  examples: "big → biggest, famous → most famous"
+  link: "https://www.grammarly.com/blog/comparative-and-superlative-adjectives/"
+
+expanding_sentences:
+  category: writing_quality
+  question_focus: "Which revision expands the sentence with specific detail?"
+  definition: "Expanding sentences adds who, what, when, where, why, and how details."
+  examples: "Meghan read → Meghan read a fantasy book by the fireplace last night."
+  link: "https://writingcenter.unc.edu/tips-and-tools/description/"
+
+reducing_sentences:
+  category: writing_quality
+  question_focus: "Which revision removes unnecessary or unclear words?"
+  definition: "Reducing sentences removes repetition, filler words, and clutter."
+  examples: "It is important to always try your best → Always try your best."
+  link: "https://writingcenter.unc.edu/tips-and-tools/conciseness/"
+
+combining_sentences:
+  category: writing_quality
+  question_focus: "Which option combines the sentences correctly?"
+  definition: "Combining sentences joins related ideas using conjunctions, punctuation, or phrases."
+  examples: "Amber is my cousin. Kaleb is my cousin. → Amber and Kaleb are my cousins."
+  link: "https://writingcenter.unc.edu/tips-and-tools/sentence-structure/"
+
+proverbs_adages:
+  category: literary_devices
+  question_focus: "Which proverb or adage matches the meaning?"
+  definition: "A proverb or adage is a short, traditional saying that expresses a general truth."
+  examples: "'Actions speak louder than words.' 'A stitch in time saves nine.'"
+  link: "https://literarydevices.net/proverb/"
+
+imagery:
+  category: literary_devices
+  question_focus: "Which phrase uses imagery to appeal to the senses?"
+  definition: "Imagery uses descriptive language to appeal to sight, sound, touch, taste, or smell."
+  examples: "The golden sun warmed my face."
+  link: "https://literarydevices.net/imagery/"
+
+allusion:
+  category: literary_devices
+  question_focus: "Which sentence contains an allusion?"
+  definition: "An allusion references a person, place, event, or text without explicitly naming it."
+  examples: "He was her Prince Charming."
+  link: "https://literarydevices.net/allusion/"

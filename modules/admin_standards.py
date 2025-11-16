@@ -15,9 +15,9 @@ def show():
     with st.expander("🔄 Sync Options"):
         col1, col2, col3 = st.columns(3)
         with col1:
-            if st.button("Sync YAML File → Topics Table"):
+            if st.button("Sync YAML File → Grammar Hints Table"):
                 sync_yaml_to_db()
-                st.success("✅ Synced YAML to Topics Table")
+                st.success("✅ Synced YAML to Grammar Hints Table")
 
         with col2:
             if st.button("Sync YAML → Concept Table"):
