@@ -18,7 +18,7 @@ Powered by the OpenAI API. This README documents both the UI and API components,
 
 - Grammar Practice
   - Generate practice sentences and multiple-choice questions
-  - Topics include parts of speech, figurative language (e.g., simile vs. metaphor), etc.
+    - Topics include parts of speech, figurative language (e.g., simile vs. metaphor), etc.
   - Randomized, adaptive question generation using GPT
 
 - Admin & Topics

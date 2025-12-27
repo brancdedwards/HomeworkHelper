@@ -16,7 +16,7 @@ yaml_path = os.path.join(DATA_DIR, "grammar_combined.yaml")
 # print(yaml_path)
 
 # Connect to SQLite database (creates if it doesn't exist)
-conn = sqlite3.connect('db/homework_helper.db')
+conn = sqlite3.connect('data/db/homework_helper.db')
 cursor = conn.cursor()
 
 # print

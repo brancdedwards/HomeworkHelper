@@ -46,7 +46,7 @@ def main():
     st.title("📚 Homework Helper — Reading & Grammar (Setup Test)")
     st.write("Setup completed successfully! You can now build the full app here.")
     '''
-    create_file(os.path.join(base_dir, "app.py"), app_py)
+    create_file(os.path.join(base_dir, "legacy/app.py"), app_py)
 
     # requirements.txt
     reqs = """

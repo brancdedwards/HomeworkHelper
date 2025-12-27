@@ -1,7 +1,7 @@
 import streamlit as st
 import os
-from utils.db import SessionLocal, Session, Passage, Question, Word
-from utils.llm_helpers import export_passage_to_pdf
+from legacy.utils.db import SessionLocal, Session, Question, Word
+from legacy.utils.llm_helpers import export_passage_to_pdf
 
 def show():
     st.title("📜 View Learning History")

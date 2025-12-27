@@ -1,14 +1,13 @@
 import streamlit as st
-from utils.llm_helpers import get_grammar_hint, generate_sentences_from_topics, get_available_categories
+from legacy.utils.llm_helpers import get_grammar_hint, generate_sentences_from_topics
 from backend.app.services.grammar_services import generate_grammar_question
-from utils.db import log_attempt
 from config.logger import log
-from utils.text_utils import normalize_answer
+from legacy.utils.text_utils import normalize_answer
 
 DEBUG = False  # Set to False to disable debug logs
 
 def get_hint_topic(selected_answer, question_topic):
-    from utils.llm_helpers import get_grammar_hint
+    from legacy.utils.llm_helpers import get_grammar_hint
     st.write(f"DEBUG (hint resolver): trying selected='{selected_answer}', fallback='{question_topic}'")
     log.debug(f"DEBUG (hint resolver): trying selected='{selected_answer}', fallback='{question_topic}'")
 
@@ -40,7 +39,7 @@ def show():
         ("Generate at random", "Let me choose a category")
     )
 
-    from utils.llm_helpers import get_available_categories
+    from legacy.utils.llm_helpers import get_available_categories
 
     try:
         categories = get_available_categories()

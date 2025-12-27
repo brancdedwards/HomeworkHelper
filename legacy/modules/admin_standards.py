@@ -1,10 +1,10 @@
 import streamlit as st
 from datetime import datetime
-from utils.db import SessionLocal, Concept
-from utils.llm_helpers import export_concepts_to_pdf
-from utils.parser_newsletter import parse_newsletter
-from utils.topic_manager import update_topics
-from utils.topic_manager import sync_yaml_to_db, sync_db_to_yaml, sync_topics_to_concepts
+from legacy.utils.db import SessionLocal, Concept
+from legacy.utils.llm_helpers import export_concepts_to_pdf
+from legacy.utils.parser_newsletter import parse_newsletter
+from legacy.utils.topic_manager import update_topics
+from legacy.utils.topic_manager import sync_yaml_to_db, sync_db_to_yaml, sync_topics_to_concepts
 from PIL import Image
 import pytesseract
 import os

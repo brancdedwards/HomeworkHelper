@@ -18,7 +18,7 @@ def get_prompt_template(category: str, topic: str = None):
     Retrieve a prompt_template from the prompts table.
     Falls back to category-only match if topic not found.
     """
-    from utils.db import get_connection
+    from legacy.utils.db import get_connection
     conn = get_connection()
     cur = conn.cursor()
     if topic:
@@ -111,7 +111,7 @@ class Topic(Base):
     last_seen_date = Column(DateTime, nullable=True)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "homework_helper.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "../..", "data", "homework_helper.db")
 
 def log_attempt(
     subject,

@@ -5,7 +5,7 @@ Everything that should be adjustable (model names, DB location,
 debug flags, YAML paths, API keys, etc.) comes from Settings.
 """
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from pathlib import Path
 
 
@@ -19,12 +19,9 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------
     # Paths
     # ---------------------------------------------------------
-    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent.parent  # Add one more .parent
     DATA_DIR: Path = BASE_DIR / "data"
-    DB_PATH: Path = BASE_DIR / "db" / "homeworkhelper.db"
-
-    # grammar topics file (for sync_yaml_to_db)
-    GRAMMAR_YAML_PATH: Path = DATA_DIR / "grammar_topics.yaml"
+    DB_PATH: Path = DATA_DIR / "db" / "homework_helper.db"
 
     # ---------------------------------------------------------
     # LLM Settings

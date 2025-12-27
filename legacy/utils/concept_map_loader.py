@@ -7,12 +7,12 @@ DB_PATH = "data/homework_helper.db"  # adjust if different
 
 # Add this import to ensure DB mode works
 try:
-    from utils.concept_map_db import get_concept, DB_PATH
+    from legacy.utils.concept_map_db import get_concept, DB_PATH
 except ImportError:
     get_concept = None
     DB_PATH = None
 
-DATA_DIR = os.path.join(os.path.dirname(__file__),"../" "data")
+DATA_DIR = os.path.join(os.path.dirname(__file__), "../../data")
 
 DEBUG = False  # Set to False to disable debug logs
 
@@ -21,8 +21,7 @@ def _load_concept_map_uncached(subject: str = "grammar"):
     """
     Loads the concept map from DB if available; falls back to YAML.
     """
-    import streamlit as st
-    from utils.concept_map_db import DB_PATH
+    from legacy.utils.concept_map_db import DB_PATH
 
     # Prefer DB if present
     if DB_PATH and os.path.exists(DB_PATH):
@@ -162,7 +161,6 @@ def detect_category_for_topic(topic: str, subject: str = "grammar") -> str:
     Detects which category a topic belongs to within a subject's concept map.
     Returns 'general' if not found.
     """
-    import streamlit as st
 
     def _find_category(node, topic, path=""):
         log.debug("DEBUG: Trying to find category...")

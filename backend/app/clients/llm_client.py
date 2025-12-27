@@ -15,7 +15,7 @@ def call_llm(prompt: str):
     return client.chat.completions.create(
         model=settings.LLM_MODEL,
         messages=[{"role": "user", "content": prompt}],
-        max_output_tokens=settings.MAX_OUTPUT_TOKENS,
+        max_tokens=settings.MAX_OUTPUT_TOKENS,
         temperature=settings.TEMPERATURE,
     )
 
@@ -25,17 +25,14 @@ def call_llm_json(prompt: str, schema: dict, max_retries: int = 3):
     """
     for attempt in range(max_retries):
         try:
-            response = client.responses.create(
+            response = client.chat.completions.create(
                 model=settings.LLM_MODEL,
-                reasoning={"effort": "medium"},
-                input=prompt,
-                max_output_tokens=settings.MAX_OUTPUT_TOKENS,
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": schema,
-                }
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=settings.MAX_OUTPUT_TOKENS,
+                temperature=settings.TEMPERATURE,
+                response_format={"type": "json_object"}
             )
-            raw = response.output[0].content[0].text
+            raw = response.choices[0].message.content
             return json.loads(raw)
         except Exception as e:
             print(f"[LLM JSON] Error attempt {attempt+1}: {e}")

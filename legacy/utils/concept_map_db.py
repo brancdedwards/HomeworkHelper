@@ -2,7 +2,7 @@ import os
 import sqlite3
 
 # Path to your SQLite database
-DB_PATH = os.path.join(os.path.dirname(__file__), "../data/homework_helper.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "../../data/homework_helper.db")
 
 def get_concept(topic: str, subject: str = "grammar"):
     """

@@ -1,8 +1,8 @@
 import streamlit as st
 import os
-from utils.db import SessionLocal, Session, Passage, Question, Word
-from utils.passage_loader import load_random_passage
-from utils.llm_helpers import simplify_text, generate_questions, explain_word
+from legacy.utils.db import SessionLocal, Session, Passage, Question, Word
+from legacy.utils.passage_loader import load_random_passage
+from legacy.utils.llm_helpers import simplify_text, generate_questions, explain_word
 
 def show():
     st.title("📖 Homework Helper - Learning Mode")

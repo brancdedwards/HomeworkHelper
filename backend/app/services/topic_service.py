@@ -32,18 +32,26 @@ def deactivate_topic(topic_id):
 # New function to fetch complete topic metadata for question generation
 def get_topic_data(topic_name: str, subject: str = "grammar"):
     """
-    Fetch a complete topic record for grammar question generation.
-    Expects the `topics` table to contain fields:
-    name, category, question_focus, definition, examples, link, active.
+    Fetch complete topic metadata by joining topics + grammar_hints.
     """
     with get_db() as db:
         row = db.execute("""
             SELECT 
-                id, name, category, question_focus,
-                definition, examples, link, active
-            FROM topics
-            WHERE LOWER(name) = LOWER(?)
-        """, (topic_name,)).fetchone()
+                t.id, 
+                t.name, 
+                t.category, 
+                t.question_focus,
+                t.prompt_template,
+                t.example,
+                t.active,
+                h.definition,
+                h.examples,
+                h.link
+            FROM topics t
+            LEFT JOIN grammar_hints h ON LOWER(t.name) = LOWER(h.topic)
+            WHERE LOWER(t.name) = LOWER(?)
+              AND t.subject = ?
+        """, (topic_name, subject)).fetchone()
 
         if not row:
             return None

@@ -21,11 +21,11 @@ def generate_grammar_question(topic: str, subject: str = "grammar", difficulty: 
     question_focus = topic_data.get("question_focus", "Create a clear grammar question.")
     definition = topic_data.get("definition")
     examples = topic_data.get("examples")
-    # Normalize examples list into a flat string
+
     if isinstance(examples, list):
         examples = "; ".join([x.strip() for x in examples])
     link = topic_data.get("link")
-    # Normalize definition spacing
+
     if isinstance(definition, str):
         definition = definition.replace("\n", " ").strip()
 
@@ -33,19 +33,19 @@ def generate_grammar_question(topic: str, subject: str = "grammar", difficulty: 
 
         Topic: {topic}
         Difficulty: {difficulty_text}
-        
+
         Definition:
         {definition or 'N/A'}
-        
+
         Examples:
         {examples or 'N/A'}
-        
+
         Question focus:
         {question_focus}
-        
+
         Style constraints:
         {style_block}
-        
+
         Required output rules:
         - Produce ONE multiple‑choice question only.
         - Include exactly FOUR answer choices.
@@ -54,19 +54,18 @@ def generate_grammar_question(topic: str, subject: str = "grammar", difficulty: 
         - Answer choices must be short, clear, and distinct.
         - Question must match the difficulty setting.
         - Output MUST be valid JSON with keys: question, options, answer.
-        
+
         IMPORTANT:
         Return ONLY the JSON. No explanation, commentary, or helper text.
         """
 
     log_prompt_and_response("grammar_question", enhanced_prompt)
 
+    # Fixed call - matching the actual signature
     return generate_mcq_question(
         topic=topic,
         subject=subject,
         prompt_instructions=enhanced_prompt,
-        difficulty=difficulty,
-        style=style
+        source_prompt=enhanced_prompt  # Adding the missing parameter
     )
-
 __all__ = ['generate_grammar_question']

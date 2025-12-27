@@ -11,10 +11,7 @@ from openai import OpenAI
 import os, yaml, re, json
 from dotenv import load_dotenv
 import streamlit as st
-from utils.concept_map_loader import load_concept_map, get_question_focus
-from utils.db import get_prompt_template
-from utils.text_utils import normalize_answer
-
+from legacy.utils.concept_map_loader import load_concept_map, get_question_focus
 
 # ---------- Setup ----------
 load_dotenv()
@@ -285,7 +282,6 @@ def generate_grammar_question(sentence: object, category: object = None, include
 # ---------- Grammar Hint Helper ----------
 def get_grammar_hint(topic: str) -> str:
     """Retrieve grammar hint dynamically from grammar_combined.yaml."""
-    import logging
     # topic = topic.lower().strip()
     st.write(f"DEBUG: (from llm helpers) topic: {topic}")
     # yaml_path = os.path.join("data", "grammar_combined.yaml")
@@ -340,7 +336,7 @@ def get_available_categories(conn=None):
     Returns a list of distinct categories from topics that have ACTIVE topics.
     Used by the UI to populate the category dropdown.
     """
-    from utils.db import get_connection
+    from legacy.utils.db import get_connection
 
     if conn is None or not hasattr(conn, "cursor"):
         conn = get_connection()
@@ -365,8 +361,7 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
     and asks OpenAI for sentences for each, possibly customizing prompts per category.
     """
     # --- Integration point: load concept map for category detection ---
-    from utils.db import get_connection
-    import random
+    from legacy.utils.db import get_connection
     if conn is None or not hasattr(conn, "cursor"):
         conn = get_connection()
     cursor = conn.cursor()
@@ -420,7 +415,7 @@ def generate_sentences_from_topics(conn=None, n=3, category=None):
     sentences = []
     seen_questions = set()
 
-    from utils.concept_map_db import get_concept
+    from legacy.utils.concept_map_db import get_concept
     topics_data = []
     for topic in selected_topics:
         if DEBUG:
