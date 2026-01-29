@@ -42,7 +42,18 @@ def get_categories():
                 ORDER BY category
             """).fetchall()
 
-            categories = [row['category'] for row in rows]
+            # Normalize categories: replace underscores with spaces and remove duplicates
+            raw_categories = [row['category'] for row in rows]
+            normalized = {}
+            for cat in raw_categories:
+                # Normalize to spaces and title case
+                normalized_cat = cat.replace('_', ' ').title()
+                # Use the original value as the key for lookup
+                if normalized_cat not in normalized:
+                    normalized[normalized_cat] = cat
+
+            # Return sorted unique categories
+            categories = sorted(normalized.keys())
 
             return {
                 "categories": categories,
