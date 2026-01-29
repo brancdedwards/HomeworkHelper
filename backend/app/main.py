@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routers import sync, topics_router, grammar_router
 # from backend.app.routers import llm  # TODO: Fix llm router imports
 # from backend.app.routers import ocr  # TODO: Implement OCR router
@@ -7,6 +8,15 @@ app = FastAPI(
     title="Homework Helper API",
     description="Backend API for grammar practice with Anthropic Claude",
     version="1.0.0"
+)
+
+# Enable CORS for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # React dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(topics_router.router)
