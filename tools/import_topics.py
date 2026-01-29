@@ -159,15 +159,19 @@ Output ONLY valid JSON in this exact format:
     "category": "one of the valid categories",
     "question_focus": "Short question asking what to identify/do",
     "prompt_template": "Template for generating questions about this topic. Use placeholders like {{word}} or {{sentence}}.",
-    "example": "Example question with 4 options (A, B, C, D), followed by correct answer and explanation",
+    "example": "Example question: Which sentence uses X correctly?\\nA) Option one\\nB) Option two\\nC) Option three\\nD) Option four\\nCorrect answer: A\\nExplanation: Why A is correct.",
     "grade_level": "5th grade"
 }}
 
-IMPORTANT:
-- Respond with ONLY the JSON object, no other text
+CRITICAL FORMATTING NOTES:
+- The "example" field MUST be a SINGLE STRING, NOT a nested JSON object
+- Use \\n (newline characters) to separate lines within the example string
+- Follow the exact format shown above with A), B), C), D) options
 - Ensure EXACTLY ONE correct answer in your example
-- Make incorrect options obviously wrong
-- Ensure the category exactly matches one from the list above"""
+- Make incorrect options obviously wrong with clear grammar errors
+- Ensure the category exactly matches one from the list above
+
+Respond with ONLY the JSON object, no other text before or after."""
 
     def _validate_metadata(self, metadata: TopicMetadata) -> bool:
         """Self-validation check"""
