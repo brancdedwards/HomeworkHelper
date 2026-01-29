@@ -3,7 +3,7 @@ import sqlite3
 import os
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-yaml_path = os.path.join(DATA_DIR, "grammar_concept_map.yaml")
+yaml_path = os.path.join(DATA_DIR, "grammar_combined.yaml")
 print(yaml_path)
 
 # Load the YAML file
@@ -12,11 +12,11 @@ with open(yaml_path, 'r') as file:
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-yaml_path = os.path.join(DATA_DIR, "grammar_concept_map.yaml")
+yaml_path = os.path.join(DATA_DIR, "grammar_combined.yaml")
 # print(yaml_path)
 
 # Connect to SQLite database (creates if it doesn't exist)
-conn = sqlite3.connect('data/homework_helper.db')
+conn = sqlite3.connect('db/homework_helper.db')
 cursor = conn.cursor()
 
 # print

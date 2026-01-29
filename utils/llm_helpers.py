@@ -208,20 +208,20 @@ def generate_grammar_question(sentence: object, category: object = None, include
     category_label = category.replace("_", " ").strip().title() if category else "English"
 
     prompt = f"""
-You are a 5th-grade {category_label} tutor.
-
-Your task:
-- Write one multiple-choice question that teaches a 5th grader a concept related to the following text.
-- Keep it simple, natural, and age-appropriate.
-- Do not ask about the text directly (avoid “In the sentence above…”).
-- Stay within {category_label.lower()} concepts.
-- Each question must have exactly 4 options and 1 correct answer.
-
-Return ONLY valid JSON with keys "prompt", "options", and "answer".
-
-Example text:
-"{sentence}"
-"""
+        You are a {n}th-grade {category_label} tutor.
+        
+        Your task:
+        - Write one multiple-choice question that teaches a 5th grader a concept related to the following text.
+        - Keep it simple, natural, and age-appropriate.
+        - Do not ask about the text directly (avoid “In the sentence above…”).
+        - Stay within {category_label.lower()} concepts.
+        - Each question must have exactly 4 options and 1 correct answer.
+        
+        Return ONLY valid JSON with keys "prompt", "options", and "answer".
+        
+        Example text:
+        "{sentence}"
+        """
     # Use unified prompt builder
     persona = PROMPT_PERSONAS.get(
         category,
@@ -284,7 +284,7 @@ Example text:
 
 # ---------- Grammar Hint Helper ----------
 def get_grammar_hint(topic: str) -> str:
-    """Retrieve grammar hint dynamically from grammar_hints.yaml."""
+    """Retrieve grammar hint dynamically from grammar_combined.yaml."""
     import logging
     # topic = topic.lower().strip()
     st.write(f"DEBUG: (from llm helpers) topic: {topic}")
@@ -298,7 +298,7 @@ def get_grammar_hint(topic: str) -> str:
             grammar_data = yaml.safe_load(f)
             # st.write(f"DEBUG: grammar_data: {grammar_data}")
             if not isinstance(grammar_data, dict):
-                st.write("DEBUG: Invalid grammar_hints.yaml structure.", grammar_data)
+                st.write("DEBUG: Invalid grammar_combined.yaml structure.", grammar_data)
                 return "Remember,(found yaml) think about how the word is used in the sentence."
     except Exception as e:
         st.write("DEBUG: Failed to read or parse YAML", str(e))

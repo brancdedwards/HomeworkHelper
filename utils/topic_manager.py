@@ -13,7 +13,7 @@ DB_PATH = "data/homework_helper.db"
 # DB_PATH = os.path.join(os.path.dirname(__file__), "..", "/data/homework_helper.db")
 def get_connection():
     return sqlite3.connect(DB_PATH)
-YAML_PATH = "data/grammar_hints.yaml"
+YAML_PATH = "data/grammar_combined.yaml"
 
 def sync_topics_to_concepts():
     """

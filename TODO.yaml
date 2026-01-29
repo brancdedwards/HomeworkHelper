@@ -272,3 +272,42 @@
     These fields are optional but will enable automated prompt construction and
     fine-grained question style control for each topic in the future.
   timeline: long_term
+
+- id: 014
+  title: Add QuestionType union support
+  description: >
+    Implement a unified QuestionType union for future extensibility,
+    allowing MultipleChoiceQuestion and future question models to be
+    returned consistently across the system.
+  status: pending
+  priority: medium
+  owner: Brandon
+  related_files:
+    - schemas/questions.py
+    - llm_service.py
+    - fastapi endpoints
+
+- id: 015
+  title: Add QuestionResponse wrapper model
+  description: >
+    Introduce a QuestionResponse wrapper for consistent API responses
+    including metadata such as source_topic, source_prompt, and llm_model.
+  status: pending
+  priority: medium
+  owner: Brandon
+  related_files:
+    - schemas/questions.py
+    - llm_service.py
+
+- id: 016
+  title: Add MCQ validation logic
+  description: >
+    Add model-level validation ensuring each MultipleChoiceQuestion
+    contains exactly one correct answer and at least three total options.
+  status: pending
+  priority: medium
+  owner: Brandon
+  related_files:
+    - schemas/questions.py
+  notes: |
+    This prevents malformed LLM output and ensures UI stability.
