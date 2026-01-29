@@ -105,6 +105,14 @@ class TopicGenerator:
             if not self._validate_metadata(metadata):
                 print(f"⚠️  Warning: Generated metadata for '{topic_name}' may need review")
 
+            # CRITICAL: Validate that only ONE answer is correct
+            validation_result = self._validate_question_correctness(metadata)
+            if not validation_result['valid']:
+                print(f"⚠️  Question validation failed: {validation_result['reason']}")
+                print(f"   Attempting to regenerate with stricter prompt...")
+                # Retry with enhanced prompt
+                return self._regenerate_with_validation(topic_name, source, notes)
+
             return metadata
 
         except Exception as e:
@@ -124,11 +132,26 @@ Requirements:
 1. Category MUST be exactly one of: {', '.join(VALID_CATEGORIES)}
 2. Questions must be age-appropriate for 5th grade
 3. Use concrete, relatable examples (kids, school, pets, sports, etc.)
-4. Question focus should be a short phrase asking what the student should identify/do (e.g., "Which word shows action?", "Where should the comma go?")
+4. Question focus should be a short phrase asking what the student should identify/do
 5. Prompt template should guide question generation with placeholders like {{word}}, {{sentence}}, {{context}}
-6. Example must include the question AND the correct answer
-7. Keep explanations simple and clear (1-2 sentences max)
-8. Focus on practical usage, not abstract grammar rules
+6. Keep explanations simple and clear (1-2 sentences max)
+7. Focus on practical usage, not abstract grammar rules
+
+CRITICAL REQUIREMENT FOR EXAMPLE QUESTIONS:
+- The example MUST be a multiple-choice question with 4 options (A, B, C, D)
+- EXACTLY ONE option must be correct
+- The other THREE options must contain CLEAR, OBVIOUS grammar errors
+- Do NOT create ambiguous questions where multiple answers could be correct
+- Incorrect options should be clearly wrong to any grammar expert
+
+Example format:
+Example question: Which sentence uses the apostrophe correctly?
+A) The dog's ball is red. [CORRECT - possessive]
+B) The dogs ball is red. [WRONG - missing apostrophe]
+C) The dog's are playing. [WRONG - incorrect use with plural verb]
+D) Its a nice day. [WRONG - should be "it's" for contraction]
+Correct answer: A
+Explanation: The apostrophe shows possession - the ball belongs to the dog.
 
 Output ONLY valid JSON in this exact format:
 {{
@@ -136,14 +159,15 @@ Output ONLY valid JSON in this exact format:
     "category": "one of the valid categories",
     "question_focus": "Short question asking what to identify/do",
     "prompt_template": "Template for generating questions about this topic. Use placeholders like {{word}} or {{sentence}}.",
-    "example": "Example question: [full question text]\\nCorrect answer: [answer]\\nExplanation: [why this is correct]",
+    "example": "Example question with 4 options (A, B, C, D), followed by correct answer and explanation",
     "grade_level": "5th grade"
 }}
 
 IMPORTANT:
 - Respond with ONLY the JSON object, no other text
-- Ensure the category exactly matches one from the list above
-- Make sure the example demonstrates the topic clearly"""
+- Ensure EXACTLY ONE correct answer in your example
+- Make incorrect options obviously wrong
+- Ensure the category exactly matches one from the list above"""
 
     def _validate_metadata(self, metadata: TopicMetadata) -> bool:
         """Self-validation check"""
@@ -164,6 +188,75 @@ IMPORTANT:
             return False
 
         return True
+
+    def _validate_question_correctness(self, metadata: TopicMetadata) -> dict:
+        """
+        Use AI to validate that the generated question has only ONE correct answer.
+        Returns: {'valid': bool, 'reason': str}
+        """
+        validation_prompt = f"""You are a strict grammar teacher. Analyze this question and determine if it has EXACTLY ONE correct answer.
+
+Question: {metadata.example}
+
+Your task:
+1. Identify all answer choices in the question
+2. Determine which answers are grammatically correct
+3. If MORE THAN ONE answer is correct, explain why
+4. If ZERO answers are correct, explain why
+
+Respond with ONLY a JSON object:
+{{
+    "num_correct_answers": <number>,
+    "correct_answers": ["list", "of", "correct", "answers"],
+    "is_valid": <true if exactly 1 correct answer, false otherwise>,
+    "reason": "explanation if invalid"
+}}"""
+
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=1000,
+                temperature=0.1,  # Very low for objective evaluation
+                messages=[{
+                    "role": "user",
+                    "content": validation_prompt
+                }]
+            )
+
+            content = response.content[0].text
+            json_start = content.find('{')
+            json_end = content.rfind('}') + 1
+
+            if json_start >= 0 and json_end > json_start:
+                validation = json.loads(content[json_start:json_end])
+
+                if validation.get('is_valid'):
+                    return {'valid': True, 'reason': 'Question has exactly one correct answer'}
+                else:
+                    return {
+                        'valid': False,
+                        'reason': f"{validation.get('num_correct_answers', 'Unknown')} correct answers found: {', '.join(validation.get('correct_answers', []))}"
+                    }
+            else:
+                return {'valid': True, 'reason': 'Could not parse validation, assuming valid'}
+
+        except Exception as e:
+            print(f"   Validation error: {e}")
+            return {'valid': True, 'reason': 'Validation failed, assuming valid'}
+
+    def _regenerate_with_validation(self, topic_name: str, source: str = None, notes: str = None, attempt: int = 1) -> TopicMetadata:
+        """Regenerate question with enhanced prompt emphasizing ONE correct answer"""
+
+        if attempt > 2:  # Max 2 retries
+            print(f"   ⚠️  Max retries reached, keeping questionable question")
+            # Return original even if flawed
+            return self.generate_metadata(topic_name, source, notes)
+
+        print(f"   🔄 Regeneration attempt {attempt}/2...")
+
+        enhanced_notes = f"{notes or ''}\n\nCRITICAL: Ensure ONLY ONE answer is correct. Make incorrect options clearly wrong with obvious grammar errors."
+
+        return self.generate_metadata(topic_name, source, enhanced_notes)
 
 
 def read_topics_csv(csv_path: Path) -> List[Dict[str, str]]:
