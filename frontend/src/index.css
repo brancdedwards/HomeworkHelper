@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-200 border border-gray-200;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-lg p-6;
+  }
+
+  .option-button {
+    @apply w-full text-left p-4 rounded-lg border-2 transition-all duration-200 hover:shadow-md;
+  }
+
+  .option-default {
+    @apply border-gray-200 hover:border-primary-300 bg-white;
+  }
+
+  .option-selected {
+    @apply border-primary-500 bg-primary-50;
+  }
+
+  .option-correct {
+    @apply border-success-500 bg-success-50;
+  }
+
+  .option-incorrect {
+    @apply border-error-500 bg-error-50;
+  }
+}
