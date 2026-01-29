@@ -32,7 +32,7 @@ body {
   }
 
   .option-default {
-    @apply border-gray-200 hover:border-primary-300 bg-white;
+    @apply border-gray-200 hover:border-primary-500 bg-white;
   }
 
   .option-selected {

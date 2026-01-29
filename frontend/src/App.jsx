@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import PracticeSetup from './components/PracticeSetup';
 import QuestionDisplay from './components/QuestionDisplay';
-import './App.css';
 
 function App() {
   const [practiceSession, setPracticeSession] = useState(null);
