@@ -1,4 +1,5 @@
 pydantic
+pydantic-settings
 fastapi
 pytesseract
 pillow
@@ -7,6 +8,7 @@ fitz
 reportlab
 streamlit>=1.37.0
 openai>=1.40.0
+anthropic>=0.39.0
 spacy>=3.7.0
 python-dotenv>=1.0.1
 sqlalchemy>=2.0.0

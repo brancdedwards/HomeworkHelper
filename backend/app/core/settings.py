@@ -26,8 +26,14 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------
     # LLM Settings
     # ---------------------------------------------------------
+    LLM_PROVIDER: str = "anthropic"  # Options: "openai" or "anthropic"
+
+    # API Keys
     OPENAI_API_KEY: str = ""
-    LLM_MODEL: str = "gpt-4o-mini"
+    CLAUDE_API_KEY: str = ""
+
+    # Model configuration
+    LLM_MODEL: str = "claude-3-5-haiku-20241022"  # or "gpt-4o-mini" for OpenAI
     MAX_OUTPUT_TOKENS: int = 800
     TEMPERATURE: float = 0.3
 
@@ -40,6 +46,8 @@ class Settings(BaseSettings):
     # App Behavior
     # ---------------------------------------------------------
     MAX_SENTENCES_PER_REQUEST: int = 25
+    MAX_QUESTIONS_PER_SESSION: int = 10  # Maximum questions per practice session
+    MIN_QUESTIONS_PER_SESSION: int = 1   # Minimum questions per practice session
     RANDOM_TOPIC_FILL: bool = True  # ensure "fill to N" works for random mode
     NORMALIZE_ANSWERS: bool = True
 

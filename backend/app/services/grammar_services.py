@@ -19,33 +19,26 @@ def generate_grammar_question(topic: str, subject: str = "grammar", difficulty: 
     difficulty_text = difficulty.capitalize()
 
     question_focus = topic_data.get("question_focus", "Create a clear grammar question.")
-    definition = topic_data.get("definition")
-    examples = topic_data.get("examples")
-
-    if isinstance(examples, list):
-        examples = "; ".join([x.strip() for x in examples])
-    link = topic_data.get("link")
-
-    if isinstance(definition, str):
-        definition = definition.replace("\n", " ").strip()
+    prompt_template = topic_data.get("prompt_template", "")
+    example = topic_data.get("example", "")
 
     enhanced_prompt = f"""You are an elementary‑level grammar tutor generating a multiple‑choice grammar question.
 
         Topic: {topic}
         Difficulty: {difficulty_text}
 
-        Definition:
-        {definition or 'N/A'}
+        Instructions:
+        {prompt_template or 'N/A'}
 
         Examples:
-        {examples or 'N/A'}
+        {example or 'N/A'}
 
         Question focus:
         {question_focus}
 
         Style constraints:
         {style_block}
-
+        
         Required output rules:
         - Produce ONE multiple‑choice question only.
         - Include exactly FOUR answer choices.
@@ -54,18 +47,91 @@ def generate_grammar_question(topic: str, subject: str = "grammar", difficulty: 
         - Answer choices must be short, clear, and distinct.
         - Question must match the difficulty setting.
         - Output MUST be valid JSON with keys: question, options, answer.
-
+        
         IMPORTANT:
         Return ONLY the JSON. No explanation, commentary, or helper text.
         """
 
     log_prompt_and_response("grammar_question", enhanced_prompt)
 
-    # Fixed call - matching the actual signature
     return generate_mcq_question(
         topic=topic,
         subject=subject,
         prompt_instructions=enhanced_prompt,
-        source_prompt=enhanced_prompt  # Adding the missing parameter
+        source_prompt=prompt_template
     )
-__all__ = ['generate_grammar_question']
+
+def generate_practice_session(num_questions: int, category: str = None, difficulty: str = "normal", style: str = "default"):
+    """
+    Generate a practice session with N questions.
+    - If category is specified, fetch topics from that category
+    - If category is None, randomly select from all active topics
+    - Returns list of question dicts with: topic, question, options, correct_answer, explanation
+    """
+    from backend.db.session import get_db
+    import random
+
+    # Fetch active topics
+    with get_db() as db:
+        if category:
+            rows = db.execute("""
+                SELECT name, category FROM topics
+                WHERE LOWER(category) = LOWER(?)
+                  AND active = 1
+                  AND subject = 'grammar'
+            """, (category,)).fetchall()
+        else:
+            rows = db.execute("""
+                SELECT name, category FROM topics
+                WHERE active = 1
+                  AND subject = 'grammar'
+            """).fetchall()
+
+        topics = [dict(row) for row in rows]
+
+    if not topics:
+        raise ValueError(f"No active topics found for category: {category}" if category else "No active topics found")
+
+    # Select topics for questions
+    available_count = len(topics)
+
+    if available_count < num_questions:
+        # If we don't have enough unique topics, allow duplicates
+        selected_topics = random.choices(topics, k=num_questions)
+    else:
+        # Random sample without replacement
+        selected_topics = random.sample(topics, num_questions)
+
+    # Generate questions for each selected topic
+    questions = []
+    for topic_data in selected_topics:
+        try:
+            result = generate_grammar_question(
+                topic=topic_data['name'],
+                subject='grammar',
+                difficulty=difficulty,
+                style=style
+            )
+
+            # Extract correct answer
+            correct_answer = next((opt.text for opt in result.question.options if opt.is_correct), None)
+
+            questions.append({
+                "topic": result.source_topic,
+                "category": topic_data['category'],
+                "question": result.question.prompt,
+                "options": [opt.text for opt in result.question.options],
+                "correct_answer": correct_answer,
+                "explanation": result.question.explanation
+            })
+        except Exception as e:
+            # Log but continue with other questions
+            log_prompt_and_response("practice_question_error", f"Topic: {topic_data['name']}, Error: {e}")
+            continue
+
+    if not questions:
+        raise ValueError("Failed to generate any questions")
+
+    return questions
+
+__all__ = ['generate_grammar_question', 'generate_practice_session']
