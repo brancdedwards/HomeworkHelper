@@ -40,6 +40,7 @@ class TopicMetadata(BaseModel):
     """Structured metadata for a grammar topic"""
     name: str = Field(..., description="The grammar topic name")
     category: str = Field(..., description="Category from the valid list")
+    question_focus: str = Field(..., description="Short question focus/prompt (e.g., 'Which word shows action?')")
     prompt_template: str = Field(..., description="Template for generating questions")
     example: str = Field(..., description="Example question with answer")
     grade_level: str = Field(default="5th grade", description="Target grade level")
@@ -123,15 +124,17 @@ Requirements:
 1. Category MUST be exactly one of: {', '.join(VALID_CATEGORIES)}
 2. Questions must be age-appropriate for 5th grade
 3. Use concrete, relatable examples (kids, school, pets, sports, etc.)
-4. Prompt template should guide question generation with placeholders like {{word}}, {{sentence}}, {{context}}
-5. Example must include the question AND the correct answer
-6. Keep explanations simple and clear (1-2 sentences max)
-7. Focus on practical usage, not abstract grammar rules
+4. Question focus should be a short phrase asking what the student should identify/do (e.g., "Which word shows action?", "Where should the comma go?")
+5. Prompt template should guide question generation with placeholders like {{word}}, {{sentence}}, {{context}}
+6. Example must include the question AND the correct answer
+7. Keep explanations simple and clear (1-2 sentences max)
+8. Focus on practical usage, not abstract grammar rules
 
 Output ONLY valid JSON in this exact format:
 {{
     "name": "{topic_name}",
     "category": "one of the valid categories",
+    "question_focus": "Short question asking what to identify/do",
     "prompt_template": "Template for generating questions about this topic. Use placeholders like {{word}} or {{sentence}}.",
     "example": "Example question: [full question text]\\nCorrect answer: [answer]\\nExplanation: [why this is correct]",
     "grade_level": "5th grade"

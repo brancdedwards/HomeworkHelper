@@ -56,15 +56,17 @@ def import_topics_to_db(topics: list) -> tuple[int, int]:
                         name,
                         subject,
                         category,
+                        question_focus,
                         prompt_template,
                         example,
                         active,
                         created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     topic['name'],
                     'grammar',
                     normalized_category,
+                    topic.get('question_focus', ''),  # Use get() for backwards compatibility
                     topic['prompt_template'],
                     topic['example'],
                     1,  # active
