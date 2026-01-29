@@ -46,26 +46,32 @@ class QuestionResponse(BaseModel):
 
 MULTIPLE_CHOICE_JSON_SCHEMA = {
     "name": "multiple_choice_question",
+    "strict": True,
     "schema": {
         "type": "object",
         "properties": {
-            "prompt": {"type": "string"},
+            "prompt": {"type": "string", "description": "The question text"},
             "options": {
                 "type": "array",
+                "description": "Array of exactly 4 answer choices",
                 "items": {
                     "type": "object",
                     "properties": {
-                        "text": {"type": "string"},
-                        "is_correct": {"type": "boolean"}
+                        "text": {"type": "string", "description": "The answer choice text"},
+                        "is_correct": {"type": "boolean", "description": "True if this is the correct answer"}
                     },
-                    "required": ["text", "is_correct"]
-                }
+                    "required": ["text", "is_correct"],
+                    "additionalProperties": False
+                },
+                "minItems": 4,
+                "maxItems": 4
             },
-            "explanation": {"type": "string"},
-            "topic": {"type": "string"},
-            "subject": {"type": "string"}
+            "explanation": {"type": "string", "description": "Brief explanation of the correct answer"},
+            "topic": {"type": "string", "description": "The topic name"},
+            "subject": {"type": "string", "description": "The subject (e.g., grammar)"}
         },
-        "required": ["prompt", "options", "topic", "subject"]
+        "required": ["prompt", "options", "topic", "subject"],
+        "additionalProperties": False
     }
 }
 

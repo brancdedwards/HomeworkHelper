@@ -14,7 +14,7 @@ from backend.app.schemas.questions import (
     QuestionResponse,
     MULTIPLE_CHOICE_JSON_SCHEMA,
 )
-from backend.app.core import settings
+from backend.app.core.settings import settings
 
 
 def generate_mcq_question(topic: str, subject: str, prompt_instructions: str, source_prompt: str):
