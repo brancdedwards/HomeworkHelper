@@ -36,7 +36,8 @@ class Settings(BaseSettings):
     CLAUDE_API_KEY: str = ""
 
     # Model configuration
-    LLM_MODEL: str = "claude-3-5-haiku-20241022"  # or "gpt-4o-mini" for OpenAI
+    # Updated to claude-3-5-sonnet-20241022 (Haiku is deprecated, EOL Feb 2026)
+    LLM_MODEL: str = "claude-3-5-sonnet-20241022"  # or "gpt-4o-mini" for OpenAI
     MAX_OUTPUT_TOKENS: int = 800
     TEMPERATURE: float = 0.3
 
