@@ -22,7 +22,7 @@ function App() {
             🎓 Homework Helper
           </h1>
           <p className="text-white/90 text-lg">
-            Master grammar and reading with AI-powered practice
+            Master grammar, reading, AND MORE with AI-powered practice
           </p>
         </header>
 
