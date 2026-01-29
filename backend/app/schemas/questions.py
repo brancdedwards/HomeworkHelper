@@ -17,6 +17,12 @@ class MultipleChoiceQuestion(BaseModel):
     topic: str
     subject: str
 
+    # Reading comprehension fields (optional)
+    passage_text: str | None = None
+    passage_title: str | None = None
+    passage_source: str | None = None
+    passage_grade_level: str | None = None
+
     @model_validator(mode="after")
     def validate_options(self):
         correct = [o for o in self.options if o.is_correct]

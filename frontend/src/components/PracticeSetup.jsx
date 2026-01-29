@@ -3,19 +3,38 @@ import api from '../services/api';
 
 function PracticeSetup({ onStartPractice, loading, setLoading }) {
   const [mode, setMode] = useState('random');
+  const [subjects, setSubjects] = useState([]);
+  const [selectedSubject, setSelectedSubject] = useState('grammar');
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [numQuestions, setNumQuestions] = useState(5);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadCategories();
+    loadSubjects();
   }, []);
 
-  const loadCategories = async () => {
+  useEffect(() => {
+    if (selectedSubject) {
+      loadCategories(selectedSubject);
+    }
+  }, [selectedSubject]);
+
+  const loadSubjects = async () => {
     try {
-      const data = await api.getCategories();
+      const data = await api.getSubjects();
+      setSubjects(data.subjects || []);
+    } catch (err) {
+      setError('Failed to load subjects. Is the backend running?');
+      console.error(err);
+    }
+  };
+
+  const loadCategories = async (subject) => {
+    try {
+      const data = await api.getCategories(subject);
       setCategories(data.categories || []);
+      setSelectedCategory(''); // Reset category when subject changes
     } catch (err) {
       setError('Failed to load categories. Is the backend running?');
       console.error(err);
@@ -28,6 +47,7 @@ function PracticeSetup({ onStartPractice, loading, setLoading }) {
 
     try {
       const session = await api.createPracticeSession({
+        subject: selectedSubject,
         num_questions: numQuestions,
         category: mode === 'category' ? selectedCategory : null,
       });
@@ -57,6 +77,31 @@ function PracticeSetup({ onStartPractice, loading, setLoading }) {
           <p className="text-error-700 font-medium">{error}</p>
         </div>
       )}
+
+      {/* Subject Selection */}
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-3">
+          Choose Subject
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          {subjects.map((subject) => (
+            <button
+              key={subject.key}
+              onClick={() => setSelectedSubject(subject.key)}
+              className={`p-4 rounded-lg border-2 transition-all ${
+                selectedSubject === subject.key
+                  ? 'border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-gray-200 hover:border-gray-300 text-gray-700'
+              }`}
+            >
+              <div className="font-semibold">{subject.icon} {subject.display_name}</div>
+              <div className="text-sm mt-1 opacity-75">
+                {subject.description}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Mode Selection */}
       <div>
@@ -107,8 +152,8 @@ function PracticeSetup({ onStartPractice, loading, setLoading }) {
           >
             <option value="">Choose a category...</option>
             {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+              <option key={cat.key} value={cat.key}>
+                {cat.display_name}
               </option>
             ))}
           </select>

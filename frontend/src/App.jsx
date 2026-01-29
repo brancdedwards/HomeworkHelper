@@ -19,10 +19,10 @@ function App() {
       <div className="max-w-4xl mx-auto">
         <header className="text-center mb-8">
           <h1 className="text-5xl font-bold text-white mb-2">
-            📘 Grammar Practice
+            🎓 Homework Helper
           </h1>
           <p className="text-white/90 text-lg">
-            Master grammar concepts with AI-powered questions
+            Master grammar and reading with AI-powered practice
           </p>
         </header>
 

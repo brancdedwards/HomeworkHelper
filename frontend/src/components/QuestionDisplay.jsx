@@ -108,6 +108,25 @@ function QuestionDisplay({ session, onReset }) {
           </span>
         </div>
 
+        {/* Passage (for reading comprehension) */}
+        {currentQuestion.passage_text && (
+          <div className="mb-6 p-5 bg-gray-50 rounded-lg border-l-4 border-primary-400">
+            {currentQuestion.passage_title && (
+              <h4 className="text-lg font-bold text-gray-800 mb-3">
+                {currentQuestion.passage_title}
+              </h4>
+            )}
+            <div className="text-gray-800 leading-relaxed whitespace-pre-line">
+              {currentQuestion.passage_text}
+            </div>
+            {currentQuestion.passage_source && (
+              <p className="text-sm text-gray-500 mt-3 italic">
+                Source: {currentQuestion.passage_source}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Question Text */}
         <h3 className="text-2xl font-bold text-gray-800 mb-6">
           {currentQuestion.question}

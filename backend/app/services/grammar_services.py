@@ -71,15 +71,22 @@ def generate_practice_session(num_questions: int, category: str = None, difficul
     from backend.db.session import get_db
     import random
 
+    # Normalize category from frontend format (e.g., "Grammar Mechanics")
+    # to database format (e.g., "grammar_mechanics")
+    if category:
+        category_normalized = category.lower().replace(' ', '_')
+    else:
+        category_normalized = None
+
     # Fetch active topics
     with get_db() as db:
-        if category:
+        if category_normalized:
             rows = db.execute("""
                 SELECT name, category FROM topics
                 WHERE LOWER(category) = LOWER(?)
                   AND active = 1
                   AND subject = 'grammar'
-            """, (category,)).fetchall()
+            """, (category_normalized,)).fetchall()
         else:
             rows = db.execute("""
                 SELECT name, category FROM topics
