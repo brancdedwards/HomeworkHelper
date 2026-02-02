@@ -284,16 +284,17 @@ Remember: ONLY ONE is_correct should be true. Output ONLY the JSON, nothing else
         raise ValueError(f"Failed to generate reading question: {e}")
 
 
-def generate_reading_session(num_questions: int, category: str = None, difficulty: str = "normal", style: str = "default"):
+def generate_reading_session(num_questions: int, category: str = None, difficulty: str = "normal", style: str = "default", questions_per_passage: int = 3):
     """
     Generate a reading comprehension practice session with N questions.
-    Each question includes a passage.
+    Generates multiple questions per passage for efficiency and variety.
 
     Args:
-        num_questions: Number of questions to generate
+        num_questions: Total number of questions to generate
         category: Specific reading category, or None for random mix
         difficulty: Question difficulty level
         style: Question style
+        questions_per_passage: Number of questions to generate per passage (default: 3)
 
     Returns:
         List of question dicts with passage, question, options, etc.
@@ -327,41 +328,63 @@ def generate_reading_session(num_questions: int, category: str = None, difficult
     if not topics:
         raise ValueError(f"No active reading topics found for category: {category}" if category else "No active reading topics found")
 
-    # Select topics for questions
-    available_count = len(topics)
+    # Calculate how many passages we need
+    num_passages = (num_questions + questions_per_passage - 1) // questions_per_passage
 
-    if available_count < num_questions:
-        selected_topics = random.choices(topics, k=num_questions)
+    # Select topics for passages (one topic per passage)
+    available_count = len(topics)
+    if available_count < num_passages:
+        selected_passage_topics = random.choices(topics, k=num_passages)
     else:
-        selected_topics = random.sample(topics, num_questions)
+        selected_passage_topics = random.sample(topics, num_passages)
 
     # Generate questions with passages
     questions = []
-    for topic_data in selected_topics:
-        try:
-            topic_name = topic_data['name']
-            topic_category = topic_data['category']
+    all_categories = list(READING_QUESTION_PROMPTS.keys())
 
-            # Generate passage
+    for passage_idx, passage_topic_data in enumerate(selected_passage_topics):
+        try:
+            topic_name = passage_topic_data['name']
+
+            # Generate ONE passage
             passage = generate_passage(
                 topic=topic_name,
-                category=topic_category,
+                category=passage_topic_data['category'],
                 grade_level="5th grade",
                 length="medium"
             )
 
-            # Generate question about the passage
-            question = generate_reading_question(
-                passage=passage,
-                category=topic_category,
-                difficulty=difficulty,
-                style=style
+            # Generate MULTIPLE questions about this passage
+            # Each question uses a different category (main idea, inference, vocab, structure)
+            questions_for_this_passage = min(
+                questions_per_passage,
+                num_questions - len(questions)  # Don't exceed requested total
             )
 
-            questions.append(question)
+            for q_idx in range(questions_for_this_passage):
+                # Cycle through different question types for variety
+                question_category = all_categories[q_idx % len(all_categories)]
+
+                # Generate question
+                question = generate_reading_question(
+                    passage=passage,
+                    category=question_category,
+                    difficulty=difficulty,
+                    style=style
+                )
+
+                questions.append(question)
+
+                # Stop if we've generated enough questions
+                if len(questions) >= num_questions:
+                    break
+
+            # Stop if we've generated enough questions
+            if len(questions) >= num_questions:
+                break
 
         except Exception as e:
-            log_prompt_and_response("reading_session_error", f"Topic: {topic_data['name']}, Error: {e}")
+            log_prompt_and_response("reading_session_error", f"Topic: {passage_topic_data['name']}, Error: {e}")
             continue
 
     if not questions:
