@@ -16,7 +16,7 @@ export const api = {
   },
 
   // Generate a practice session for a specific subject
-  async createPracticeSession({ subject = 'grammar', num_questions, category, difficulty = 'normal', style = 'default' }) {
+  async createPracticeSession({ subject = 'grammar', num_questions, category, difficulty = 'normal', style = 'default', questions_per_passage }) {
     const response = await fetch(`${API_BASE_URL}/subjects/${subject}/session`, {
       method: 'POST',
       headers: {
@@ -27,6 +27,7 @@ export const api = {
         category,
         difficulty,
         style,
+        questions_per_passage,  // Optional, only used for reading
       }),
     });
 

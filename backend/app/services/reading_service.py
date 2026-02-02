@@ -129,6 +129,16 @@ def generate_passage(topic: str, category: str, grade_level: str = "5th grade", 
 
     style_guidance = category_styles.get(category, "an engaging passage")
 
+    # Variety instructions to avoid repetitive content
+    variety_instructions = """
+CRITICAL - CREATE UNIQUE, ENGAGING CONTENT:
+- Use DIVERSE subjects and settings (avoid overused examples)
+- Create vivid, specific scenarios that feel fresh and interesting
+- Use creative details that would engage 5th graders
+- Avoid clichéd topics or predictable narratives
+- Make every passage feel unique and worth reading
+"""
+
     prompt = f"""You are an expert in children's literature and education. Generate {length_desc} suitable for {grade_level} students.
 
 Topic: {topic}
@@ -143,6 +153,8 @@ Requirements:
 - Include vivid details and varied vocabulary
 - Educational and informative
 - Write in complete paragraphs (2-4 paragraphs total)
+
+{variety_instructions}
 
 Return ONLY the passage text. Do not include a title, do not add any preamble or commentary.
 Just write the passage itself."""
@@ -338,54 +350,96 @@ def generate_reading_session(num_questions: int, category: str = None, difficult
     else:
         selected_passage_topics = random.sample(topics, num_passages)
 
-    # Generate questions with passages
+    # Generate questions with passages - with duplicate prevention
     questions = []
+    seen_passages = set()  # Track passage beginnings to prevent duplicates
+    seen_questions = set()  # Track question text to prevent duplicates
     all_categories = list(READING_QUESTION_PROMPTS.keys())
+    max_passage_retries = 2
+    max_question_retries = 3
 
     for passage_idx, passage_topic_data in enumerate(selected_passage_topics):
-        try:
-            topic_name = passage_topic_data['name']
+        passage_generated = False
 
-            # Generate ONE passage
-            passage = generate_passage(
-                topic=topic_name,
-                category=passage_topic_data['category'],
-                grade_level="5th grade",
-                length="medium"
-            )
+        for passage_attempt in range(max_passage_retries):
+            try:
+                topic_name = passage_topic_data['name']
 
-            # Generate MULTIPLE questions about this passage
-            # Each question uses a different category (main idea, inference, vocab, structure)
-            questions_for_this_passage = min(
-                questions_per_passage,
-                num_questions - len(questions)  # Don't exceed requested total
-            )
-
-            for q_idx in range(questions_for_this_passage):
-                # Cycle through different question types for variety
-                question_category = all_categories[q_idx % len(all_categories)]
-
-                # Generate question
-                question = generate_reading_question(
-                    passage=passage,
-                    category=question_category,
-                    difficulty=difficulty,
-                    style=style
+                # Generate ONE passage
+                passage = generate_passage(
+                    topic=topic_name,
+                    category=passage_topic_data['category'],
+                    grade_level="5th grade",
+                    length="medium"
                 )
 
-                questions.append(question)
+                # Check if we've seen a very similar passage (first 100 chars)
+                passage_signature = passage['passage_text'][:100].lower().strip()
+                if passage_signature in seen_passages:
+                    log_prompt_and_response("duplicate_passage_detected", f"Retry {passage_attempt + 1}: Similar passage for {topic_name}")
+                    continue
+
+                seen_passages.add(passage_signature)
+                passage_generated = True
+
+                # Generate MULTIPLE questions about this passage
+                # Each question uses a different category (main idea, inference, vocab, structure)
+                questions_for_this_passage = min(
+                    questions_per_passage,
+                    num_questions - len(questions)  # Don't exceed requested total
+                )
+
+                for q_idx in range(questions_for_this_passage):
+                    question_generated = False
+
+                    for question_attempt in range(max_question_retries):
+                        try:
+                            # Cycle through different question types for variety
+                            question_category = all_categories[q_idx % len(all_categories)]
+
+                            # Generate question
+                            question = generate_reading_question(
+                                passage=passage,
+                                category=question_category,
+                                difficulty=difficulty,
+                                style=style
+                            )
+
+                            question_text = question['question'].lower().strip()
+
+                            # Check for duplicate question
+                            if question_text in seen_questions:
+                                log_prompt_and_response("duplicate_reading_question", f"Retry {question_attempt + 1}: Duplicate question")
+                                continue
+
+                            seen_questions.add(question_text)
+                            questions.append(question)
+                            question_generated = True
+                            break
+
+                        except Exception as e:
+                            log_prompt_and_response("reading_question_error", f"Attempt {question_attempt + 1}, Error: {e}")
+                            continue
+
+                    if not question_generated:
+                        log_prompt_and_response("question_generation_failed", f"Failed after {max_question_retries} attempts")
+
+                    # Stop if we've generated enough questions
+                    if len(questions) >= num_questions:
+                        break
 
                 # Stop if we've generated enough questions
                 if len(questions) >= num_questions:
                     break
 
-            # Stop if we've generated enough questions
-            if len(questions) >= num_questions:
-                break
+                break  # Passage was successfully generated, move to next
 
-        except Exception as e:
-            log_prompt_and_response("reading_session_error", f"Topic: {passage_topic_data['name']}, Error: {e}")
-            continue
+            except Exception as e:
+                log_prompt_and_response("reading_session_error", f"Topic: {passage_topic_data['name']}, Attempt: {passage_attempt + 1}, Error: {e}")
+                continue
+
+        if not passage_generated:
+            log_prompt_and_response("passage_generation_failed", f"Failed to generate unique passage for {passage_topic_data['name']} after {max_passage_retries} attempts")
 
     if not questions:
         raise ValueError("Failed to generate any reading questions")

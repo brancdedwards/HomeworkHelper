@@ -22,6 +22,44 @@ def generate_grammar_question(topic: str, subject: str = "grammar", difficulty: 
     prompt_template = topic_data.get("prompt_template", "")
     example = topic_data.get("example", "")
 
+    # Difficulty-specific modifiers
+    difficulty_modifiers = {
+        'easy': """
+        - Use simple, common vocabulary (5th grade level or below)
+        - Keep sentences short and straightforward (8-12 words)
+        - Focus on basic identification and recognition
+        - Make the correct answer fairly obvious
+        - Use familiar contexts (school, home, playground)
+        """,
+        'normal': """
+        - Use age-appropriate vocabulary (5th-6th grade level)
+        - Use moderate sentence complexity (10-15 words)
+        - Balance recognition and application questions
+        - Include some common mistake patterns as distractors
+        - Use varied, engaging contexts
+        """,
+        'hard': """
+        - Use more advanced vocabulary (6th-7th grade level)
+        - Use complex sentence structures (15-20 words)
+        - Focus on application, analysis, and subtle distinctions
+        - Include plausible distractors that test deeper understanding
+        - Require careful reading and critical thinking
+        - Use less common but still grade-appropriate contexts
+        """
+    }
+
+    difficulty_guidance = difficulty_modifiers.get(difficulty.lower(), difficulty_modifiers['normal'])
+
+    # Variety instructions to prevent repetitive content
+    variety_instructions = """
+    CRITICAL - CREATE UNIQUE, VARIED CONTENT:
+    - Use DIVERSE names (avoid: elephant, Sarah, cat, dog, pizza unless necessary for the concept)
+    - Vary your question stems (don't always use "Which sentence...")
+    - Use creative, interesting scenarios that 5th graders would find engaging
+    - Mix up sentence topics: science, history, adventure, everyday life, nature, technology
+    - Avoid clichéd examples - be imaginative!
+    """
+
     enhanced_prompt = f"""You are an elementary‑level grammar tutor generating a multiple‑choice grammar question.
 
         Topic: {topic}
@@ -36,18 +74,23 @@ def generate_grammar_question(topic: str, subject: str = "grammar", difficulty: 
         Question focus:
         {question_focus}
 
+        Difficulty Guidelines:
+        {difficulty_guidance}
+
+        {variety_instructions}
+
         Style constraints:
         {style_block}
-        
+
         Required output rules:
         - Produce ONE multiple‑choice question only.
         - Include exactly FOUR answer choices.
         - DO NOT include fill‑in‑the‑blank questions.
         - DO NOT reveal the correct answer in the question stem.
         - Answer choices must be short, clear, and distinct.
-        - Question must match the difficulty setting.
+        - Question must match the difficulty setting above.
         - Output MUST be valid JSON with keys: question, options, answer.
-        
+
         IMPORTANT:
         Return ONLY the JSON. No explanation, commentary, or helper text.
         """
@@ -109,32 +152,79 @@ def generate_practice_session(num_questions: int, category: str = None, difficul
         # Random sample without replacement
         selected_topics = random.sample(topics, num_questions)
 
-    # Generate questions for each selected topic
+    # Generate questions with duplicate prevention
     questions = []
+    seen_questions = set()  # Track question text to prevent exact duplicates
+    seen_examples = set()  # Track examples used (like "elephant", "Sarah", etc.)
+    max_retries = 3
+
     for topic_data in selected_topics:
-        try:
-            result = generate_grammar_question(
-                topic=topic_data['name'],
-                subject='grammar',
-                difficulty=difficulty,
-                style=style
-            )
+        question_generated = False
 
-            # Extract correct answer
-            correct_answer = next((opt.text for opt in result.question.options if opt.is_correct), None)
+        for attempt in range(max_retries):
+            try:
+                result = generate_grammar_question(
+                    topic=topic_data['name'],
+                    subject='grammar',
+                    difficulty=difficulty,
+                    style=style
+                )
 
-            questions.append({
-                "topic": result.source_topic,
-                "category": topic_data['category'],
-                "question": result.question.prompt,
-                "options": [opt.text for opt in result.question.options],
-                "correct_answer": correct_answer,
-                "explanation": result.question.explanation
-            })
-        except Exception as e:
-            # Log but continue with other questions
-            log_prompt_and_response("practice_question_error", f"Topic: {topic_data['name']}, Error: {e}")
-            continue
+                question_text = result.question.prompt.lower().strip()
+
+                # Check for duplicate question text
+                if question_text in seen_questions:
+                    log_prompt_and_response("duplicate_question_detected", f"Retry {attempt + 1}: Duplicate question for {topic_data['name']}")
+                    continue
+
+                # Check for overused examples (elephant, Sarah, etc.)
+                overused_examples = ['elephant', 'sarah', 'dog', 'cat', 'pizza']
+                question_lower = question_text.lower()
+                used_example = None
+
+                for example in overused_examples:
+                    if example in question_lower:
+                        # Allow if we haven't used this example yet
+                        if example not in seen_examples:
+                            seen_examples.add(example)
+                            used_example = example
+                            break
+                        else:
+                            # Already used this example, try regenerating
+                            log_prompt_and_response("overused_example_detected", f"Retry {attempt + 1}: '{example}' overused in {topic_data['name']}")
+                            used_example = None
+                            break
+
+                # If we found an overused example that's already been used, retry
+                if used_example is None and any(ex in question_lower for ex in overused_examples if ex in seen_examples):
+                    continue
+
+                # Question is unique - add it
+                seen_questions.add(question_text)
+
+                # Extract correct answer
+                correct_answer = next((opt.text for opt in result.question.options if opt.is_correct), None)
+
+                questions.append({
+                    "topic": result.source_topic,
+                    "category": topic_data['category'],
+                    "question": result.question.prompt,
+                    "options": [opt.text for opt in result.question.options],
+                    "correct_answer": correct_answer,
+                    "explanation": result.question.explanation
+                })
+
+                question_generated = True
+                break
+
+            except Exception as e:
+                # Log but try again
+                log_prompt_and_response("practice_question_error", f"Topic: {topic_data['name']}, Attempt {attempt + 1}, Error: {e}")
+                continue
+
+        # If we couldn't generate a unique question after retries, log warning but continue
+        if not question_generated:
+            log_prompt_and_response("question_generation_failed", f"Failed to generate unique question for {topic_data['name']} after {max_retries} attempts")
 
     if not questions:
         raise ValueError("Failed to generate any questions")

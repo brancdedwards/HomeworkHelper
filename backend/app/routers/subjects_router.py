@@ -22,10 +22,11 @@ router = APIRouter(prefix="/subjects", tags=["Subjects"])
 
 
 class PracticeSessionRequest(BaseModel):
-    num_questions: int = Field(ge=1, le=10, description="Number of questions (1-10)")
+    num_questions: int = Field(ge=1, le=20, description="Number of questions (1-20)")
     category: Optional[str] = Field(None, description="Specific category to focus on, or None for random")
     difficulty: str = Field("normal", description="Question difficulty level")
     style: str = Field("default", description="Question style")
+    questions_per_passage: Optional[int] = Field(None, ge=2, le=4, description="For reading: questions per passage (2-4)")
 
 
 @router.get("")
@@ -157,7 +158,8 @@ def create_practice_session(
                 num_questions=payload.num_questions,
                 category=payload.category,
                 difficulty=payload.difficulty,
-                style=payload.style
+                style=payload.style,
+                questions_per_passage=payload.questions_per_passage or 3  # Default to 3 if not provided
             )
         else:
             raise HTTPException(

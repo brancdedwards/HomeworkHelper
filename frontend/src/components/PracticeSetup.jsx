@@ -10,6 +10,10 @@ function PracticeSetup({ onStartPractice, loading, setLoading }) {
   const [numQuestions, setNumQuestions] = useState(5);
   const [error, setError] = useState(null);
 
+  // Reading-specific state
+  const [numPassages, setNumPassages] = useState(1);
+  const [questionsPerPassage, setQuestionsPerPassage] = useState(3);
+
   useEffect(() => {
     loadSubjects();
   }, []);
@@ -17,10 +21,13 @@ function PracticeSetup({ onStartPractice, loading, setLoading }) {
   useEffect(() => {
     if (selectedSubject) {
       loadCategories(selectedSubject);
-      // Adjust default question count based on subject
-      // Reading passages are longer, so default to 3 questions
-      // Grammar questions are shorter, so default to 5 questions
-      setNumQuestions(selectedSubject === 'reading' ? 3 : 5);
+      // Adjust defaults based on subject
+      if (selectedSubject === 'reading') {
+        setNumPassages(1);
+        setQuestionsPerPassage(3);
+      } else {
+        setNumQuestions(5);
+      }
     }
   }, [selectedSubject]);
 
@@ -50,11 +57,21 @@ function PracticeSetup({ onStartPractice, loading, setLoading }) {
     setError(null);
 
     try {
-      const session = await api.createPracticeSession({
+      const sessionParams = {
         subject: selectedSubject,
-        num_questions: numQuestions,
         category: mode === 'category' ? selectedCategory : null,
-      });
+      };
+
+      // For reading: use passage-based controls
+      // For grammar: use simple question count
+      if (selectedSubject === 'reading') {
+        sessionParams.num_questions = numPassages * questionsPerPassage;
+        sessionParams.questions_per_passage = questionsPerPassage;
+      } else {
+        sessionParams.num_questions = numQuestions;
+      }
+
+      const session = await api.createPracticeSession(sessionParams);
 
       onStartPractice(session);
     } catch (err) {
@@ -164,24 +181,72 @@ function PracticeSetup({ onStartPractice, loading, setLoading }) {
         </div>
       )}
 
-      {/* Number of Questions */}
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Number of Questions: <span className="text-primary-600">{numQuestions}</span>
-        </label>
-        <input
-          type="range"
-          min="1"
-          max="10"
-          value={numQuestions}
-          onChange={(e) => setNumQuestions(parseInt(e.target.value))}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
-        />
-        <div className="flex justify-between text-xs text-gray-500 mt-1">
-          <span>1</span>
-          <span>10</span>
+      {/* Question Configuration - Different UI for Reading vs Grammar */}
+      {selectedSubject === 'reading' ? (
+        <div className="space-y-4">
+          {/* Number of Passages */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Number of Passages: <span className="text-primary-600">{numPassages}</span>
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="5"
+              value={numPassages}
+              onChange={(e) => setNumPassages(parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+            />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>1 passage</span>
+              <span>5 passages</span>
+            </div>
+          </div>
+
+          {/* Questions per Passage */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Questions per Passage
+            </label>
+            <select
+              value={questionsPerPassage}
+              onChange={(e) => setQuestionsPerPassage(parseInt(e.target.value))}
+              className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none"
+            >
+              <option value={2}>2 questions each</option>
+              <option value={3}>3 questions each</option>
+              <option value={4}>4 questions each</option>
+            </select>
+          </div>
+
+          {/* Total Questions Display */}
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800 font-medium text-center">
+              📊 Total: <span className="text-blue-600 font-bold">{numPassages * questionsPerPassage}</span> questions
+              ({numPassages} {numPassages === 1 ? 'passage' : 'passages'} × {questionsPerPassage} questions each)
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Grammar: Simple question count slider */
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Number of Questions: <span className="text-primary-600">{numQuestions}</span>
+          </label>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            value={numQuestions}
+            onChange={(e) => setNumQuestions(parseInt(e.target.value))}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+          />
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>1</span>
+            <span>10</span>
+          </div>
+        </div>
+      )}
 
       {/* Generate Button */}
       <button
