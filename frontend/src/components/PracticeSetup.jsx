@@ -17,6 +17,10 @@ function PracticeSetup({ onStartPractice, loading, setLoading }) {
   useEffect(() => {
     if (selectedSubject) {
       loadCategories(selectedSubject);
+      // Adjust default question count based on subject
+      // Reading passages are longer, so default to 3 questions
+      // Grammar questions are shorter, so default to 5 questions
+      setNumQuestions(selectedSubject === 'reading' ? 3 : 5);
     }
   }, [selectedSubject]);
 
@@ -203,7 +207,9 @@ function PracticeSetup({ onStartPractice, loading, setLoading }) {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            Generating Questions...
+            {selectedSubject === 'reading'
+              ? 'Generating passages and questions...'
+              : 'Generating questions...'}
           </span>
         ) : (
           '🔄 Generate Practice Session'

@@ -64,20 +64,20 @@ SUBJECTS: Dict[str, SubjectConfig] = {
 # Category Display Names (for UI)
 CATEGORY_DISPLAY_NAMES = {
     # Grammar categories
-    'grammar_mechanics': 'Grammar Mechanics',
-    'literary_devices': 'Literary Devices',
-    'parts_of_speech': 'Parts of Speech',
-    'punctuation': 'Punctuation',
-    'sentence_structure': 'Sentence Structure',
-    'sentence_type': 'Sentence Type',
-    'vocabulary': 'Vocabulary',
-    'writing_quality': 'Writing Quality',
+    'grammar_mechanics': '⚙️ Grammar Mechanics',
+    'literary_devices': '✨ Literary Devices',
+    'parts_of_speech': '🔤 Parts of Speech',
+    'punctuation': '❗ Punctuation',
+    'sentence_structure': '🏗️ Sentence Structure',
+    'sentence_type': '📋 Sentence Type',
+    'vocabulary': '📚 Vocabulary',
+    'writing_quality': '✍️ Writing Quality',
 
     # Reading categories
-    'main_idea_theme': 'Main Idea & Theme',
-    'inference_conclusions': 'Inference & Conclusions',
-    'vocabulary_in_context': 'Vocabulary in Context',
-    'text_structure_purpose': 'Text Structure & Purpose'
+    'main_idea_theme': '🎯 Main Idea & Theme',
+    'inference_conclusions': '🔍 Inference & Conclusions',
+    'vocabulary_in_context': '📖 Vocabulary in Context',
+    'text_structure_purpose': '📐 Text Structure & Purpose'
 }
 
 

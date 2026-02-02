@@ -10,6 +10,25 @@ function QuestionDisplay({ session, onReset }) {
   const isLastQuestion = currentIndex === session.questions.length - 1;
   const totalCorrect = Object.values(answers).filter((a) => a).length;
 
+  // For reading comprehension: track which questions share the same passage
+  const getPassageQuestionInfo = () => {
+    if (!currentQuestion.passage_text) return null;
+
+    const samePassageQuestions = session.questions
+      .map((q, idx) => ({ q, idx }))
+      .filter(({ q }) => q.passage_text === currentQuestion.passage_text);
+
+    const currentPositionInPassage = samePassageQuestions.findIndex(({ idx }) => idx === currentIndex) + 1;
+
+    return {
+      current: currentPositionInPassage,
+      total: samePassageQuestions.length,
+      isFirstOfPassage: currentPositionInPassage === 1
+    };
+  };
+
+  const passageInfo = getPassageQuestionInfo();
+
   const handleOptionSelect = (option) => {
     if (submitted[currentIndex]) return; // Already submitted
 
@@ -110,19 +129,45 @@ function QuestionDisplay({ session, onReset }) {
 
         {/* Passage (for reading comprehension) */}
         {currentQuestion.passage_text && (
-          <div className="mb-6 p-5 bg-gray-50 rounded-lg border-l-4 border-primary-400">
-            {currentQuestion.passage_title && (
-              <h4 className="text-lg font-bold text-gray-800 mb-3">
-                {currentQuestion.passage_title}
-              </h4>
+          <div className="mb-6">
+            {/* Passage info banner */}
+            {passageInfo && (
+              <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800 font-medium">
+                  📖 Reading Passage: {currentQuestion.topic}
+                  <span className="ml-2 text-blue-600">
+                    (Question {passageInfo.current} of {passageInfo.total} about this passage)
+                  </span>
+                </p>
+              </div>
             )}
-            <div className="text-gray-800 leading-relaxed whitespace-pre-line">
-              {currentQuestion.passage_text}
-            </div>
-            {currentQuestion.passage_source && (
-              <p className="text-sm text-gray-500 mt-3 italic">
-                Source: {currentQuestion.passage_source}
-              </p>
+
+            {/* Only show passage on first question of the group */}
+            {passageInfo?.isFirstOfPassage && (
+              <div className="p-5 bg-gray-50 rounded-lg border-l-4 border-primary-400">
+                {currentQuestion.passage_title && (
+                  <h4 className="text-lg font-bold text-gray-800 mb-3">
+                    {currentQuestion.passage_title}
+                  </h4>
+                )}
+                <div className="text-gray-800 leading-relaxed whitespace-pre-line">
+                  {currentQuestion.passage_text}
+                </div>
+                {currentQuestion.passage_source && (
+                  <p className="text-sm text-gray-500 mt-3 italic">
+                    Source: {currentQuestion.passage_source}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* For subsequent questions in the same passage, show a reminder */}
+            {passageInfo && !passageInfo.isFirstOfPassage && (
+              <div className="p-4 bg-gray-100 rounded-lg border border-gray-300">
+                <p className="text-sm text-gray-700">
+                  💡 This question refers to the passage about <strong>{currentQuestion.topic}</strong> from the previous questions.
+                </p>
+              </div>
             )}
           </div>
         )}
