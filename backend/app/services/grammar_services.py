@@ -155,7 +155,8 @@ def generate_practice_session(num_questions: int, category: str = None, difficul
     # Generate questions with duplicate prevention
     questions = []
     seen_questions = set()  # Track question text to prevent exact duplicates
-    seen_examples = set()  # Track examples used (like "elephant", "Sarah", etc.)
+    seen_example_sentences = set()  # Track example sentences used in questions (e.g., "Marco raced through...")
+    seen_overused_words = set()  # Track overused words (elephant, Sarah, etc.)
     max_retries = 3
 
     for topic_data in selected_topics:
@@ -172,31 +173,42 @@ def generate_practice_session(num_questions: int, category: str = None, difficul
 
                 question_text = result.question.prompt.lower().strip()
 
-                # Check for duplicate question text
+                # Check for duplicate question text (exact match)
                 if question_text in seen_questions:
                     log_prompt_and_response("duplicate_question_detected", f"Retry {attempt + 1}: Duplicate question for {topic_data['name']}")
                     continue
 
-                # Check for overused examples (elephant, Sarah, etc.)
-                overused_examples = ['elephant', 'sarah', 'dog', 'cat', 'pizza']
-                question_lower = question_text.lower()
-                used_example = None
+                # Check for duplicate sentence examples (sentences in quotes)
+                # This catches when Claude uses the same example sentence with slightly different question wording
+                import re
+                sentences_in_question = re.findall(r"'([^']+)'", question_text)
+                if sentences_in_question:
+                    example_sentence = sentences_in_question[0][:50]  # First 50 chars of example sentence
+                    if example_sentence in seen_example_sentences:
+                        log_prompt_and_response("duplicate_sentence_example", f"Retry {attempt + 1}: Reusing sentence example '{example_sentence[:30]}...' in {topic_data['name']}")
+                        continue
+                    seen_example_sentences.add(example_sentence)
 
-                for example in overused_examples:
-                    if example in question_lower:
-                        # Allow if we haven't used this example yet
-                        if example not in seen_examples:
-                            seen_examples.add(example)
-                            used_example = example
+                # Check for overused words (elephant, Sarah, etc.)
+                overused_words = ['elephant', 'sarah', 'dog', 'cat', 'pizza', 'marco']
+                question_lower = question_text.lower()
+                used_word = None
+
+                for word in overused_words:
+                    if word in question_lower:
+                        # Allow if we haven't used this word yet
+                        if word not in seen_overused_words:
+                            seen_overused_words.add(word)
+                            used_word = word
                             break
                         else:
-                            # Already used this example, try regenerating
-                            log_prompt_and_response("overused_example_detected", f"Retry {attempt + 1}: '{example}' overused in {topic_data['name']}")
-                            used_example = None
+                            # Already used this word, try regenerating
+                            log_prompt_and_response("overused_word_detected", f"Retry {attempt + 1}: '{word}' overused in {topic_data['name']}")
+                            used_word = None
                             break
 
-                # If we found an overused example that's already been used, retry
-                if used_example is None and any(ex in question_lower for ex in overused_examples if ex in seen_examples):
+                # If we found an overused word that's already been used, retry
+                if used_word is None and any(word in question_lower for word in overused_words if word in seen_overused_words):
                     continue
 
                 # Question is unique - add it
