@@ -12,6 +12,11 @@ from backend.app.services.llm_service import generate_mcq_question
 from backend.app.services.topic_service import get_topic_data
 from backend.app.core.logging_config import log_prompt_and_response
 from backend.app.core.settings import Settings
+from backend.app.services.question_history_service import (
+    hash_question,
+    is_question_recently_used,
+    record_question_usage
+)
 from anthropic import Anthropic
 import json
 import random
@@ -420,10 +425,20 @@ def generate_reading_session(num_questions: int, category: str = None, difficult
 
                             question_text = question['question'].lower().strip()
 
-                            # Check for duplicate question
+                            # Check for duplicate question within session
                             if question_text in seen_questions:
                                 log_prompt_and_response("duplicate_reading_question", f"Retry {question_attempt + 1}: Duplicate question")
                                 continue
+
+                            # Check question history across sessions (7-day cooldown)
+                            question_hash_value = hash_question(question_text)
+                            if is_question_recently_used(question_hash_value, cooldown_days=7):
+                                log_prompt_and_response("reading_question_recently_used", f"Retry {question_attempt + 1}: Question used within 7 days")
+                                continue
+
+                            # Record question in history database
+                            question['subject'] = 'reading'
+                            record_question_usage(question)
 
                             seen_questions.add(question_text)
                             questions.append(question)

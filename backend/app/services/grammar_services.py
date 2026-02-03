@@ -2,6 +2,11 @@ from backend.app.services.llm_service import generate_mcq_question
 from backend.app.services.topic_service import get_topic_data
 from backend.app.core.logging_config import log_prompt_and_response
 from backend.app.services.prompt_templates import get_style_template
+from backend.app.services.question_history_service import (
+    hash_question,
+    is_question_recently_used,
+    record_question_usage
+)
 
 # Service layer for generating grammar questions.
 # This layer enhances legacy question generation by incorporating detailed topic metadata,
@@ -186,9 +191,15 @@ def generate_practice_session(num_questions: int, category: str = None, difficul
 
                 question_text = result.question.prompt.lower().strip()
 
-                # Check for duplicate question text (exact match)
+                # Check for duplicate question text (exact match within session)
                 if question_text in seen_questions:
                     log_prompt_and_response("duplicate_question_detected", f"Retry {attempt + 1}: Duplicate question for {topic_data['name']}")
+                    continue
+
+                # Check question history across sessions (7-day cooldown)
+                question_hash_value = hash_question(question_text)
+                if is_question_recently_used(question_hash_value, cooldown_days=7):
+                    log_prompt_and_response("question_recently_used", f"Retry {attempt + 1}: Question used within 7 days for {topic_data['name']}")
                     continue
 
                 # Check for duplicate sentence examples (sentences in quotes)
@@ -230,15 +241,20 @@ def generate_practice_session(num_questions: int, category: str = None, difficul
                 # Extract correct answer
                 correct_answer = next((opt.text for opt in result.question.options if opt.is_correct), None)
 
-                questions.append({
+                question_dict = {
+                    "subject": "grammar",
                     "topic": result.source_topic,
                     "category": topic_data['category'],
                     "question": result.question.prompt,
                     "options": [opt.text for opt in result.question.options],
                     "correct_answer": correct_answer,
                     "explanation": result.question.explanation
-                })
+                }
 
+                # Record question in history database for future deduplication
+                record_question_usage(question_dict)
+
+                questions.append(question_dict)
                 question_generated = True
                 break
 
