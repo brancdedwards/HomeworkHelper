@@ -351,14 +351,27 @@ def generate_reading_session(num_questions: int, category: str = None, difficult
         selected_passage_topics = random.sample(topics, num_passages)
 
     # Generate questions with passages - with duplicate prevention
+    # Keep generating until we have the requested number of questions
     questions = []
     seen_passages = set()  # Track passage beginnings to prevent duplicates
     seen_questions = set()  # Track question text to prevent duplicates
     all_categories = list(READING_QUESTION_PROMPTS.keys())
     max_passage_retries = 2
     max_question_retries = 3
+    max_topic_iterations = num_passages * 3  # Safety limit
+    topic_iteration_count = 0
 
-    for passage_idx, passage_topic_data in enumerate(selected_passage_topics):
+    # Keep iterating through passage topics until we have enough questions
+    topic_pool = selected_passage_topics.copy()
+
+    while len(questions) < num_questions and topic_iteration_count < max_topic_iterations:
+        # If we've exhausted the topic pool, reshuffle and reuse
+        if not topic_pool:
+            topic_pool = selected_passage_topics.copy()
+            random.shuffle(topic_pool)
+
+        passage_topic_data = topic_pool.pop(0)
+        topic_iteration_count += 1
         passage_generated = False
 
         for passage_attempt in range(max_passage_retries):
@@ -439,10 +452,14 @@ def generate_reading_session(num_questions: int, category: str = None, difficult
                 continue
 
         if not passage_generated:
-            log_prompt_and_response("passage_generation_failed", f"Failed to generate unique passage for {passage_topic_data['name']} after {max_passage_retries} attempts")
+            log_prompt_and_response("passage_generation_failed", f"Failed to generate unique passage for {passage_topic_data['name']} after {max_passage_retries} attempts - will try different topic")
 
-    if not questions:
-        raise ValueError("Failed to generate any reading questions")
+    # Final check: did we get the requested number?
+    if len(questions) < num_questions:
+        log_prompt_and_response("insufficient_questions", f"Only generated {len(questions)}/{num_questions} reading questions after {topic_iteration_count} topic attempts")
+        # Still return what we have rather than failing completely
+        if not questions:
+            raise ValueError("Failed to generate any reading questions")
 
     return questions
 

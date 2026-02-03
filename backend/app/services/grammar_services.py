@@ -153,13 +153,26 @@ def generate_practice_session(num_questions: int, category: str = None, difficul
         selected_topics = random.sample(topics, num_questions)
 
     # Generate questions with duplicate prevention
+    # Keep generating until we have the requested number of questions
     questions = []
     seen_questions = set()  # Track question text to prevent exact duplicates
     seen_example_sentences = set()  # Track example sentences used in questions (e.g., "Marco raced through...")
     seen_overused_words = set()  # Track overused words (elephant, Sarah, etc.)
     max_retries = 3
+    max_topic_iterations = num_questions * 3  # Safety limit to prevent infinite loops
+    topic_iteration_count = 0
 
-    for topic_data in selected_topics:
+    # Keep iterating through topics until we have enough questions
+    topic_pool = selected_topics.copy()
+
+    while len(questions) < num_questions and topic_iteration_count < max_topic_iterations:
+        # If we've exhausted the topic pool, reshuffle and reuse
+        if not topic_pool:
+            topic_pool = selected_topics.copy()
+            random.shuffle(topic_pool)
+
+        topic_data = topic_pool.pop(0)
+        topic_iteration_count += 1
         question_generated = False
 
         for attempt in range(max_retries):
@@ -234,12 +247,17 @@ def generate_practice_session(num_questions: int, category: str = None, difficul
                 log_prompt_and_response("practice_question_error", f"Topic: {topic_data['name']}, Attempt {attempt + 1}, Error: {e}")
                 continue
 
-        # If we couldn't generate a unique question after retries, log warning but continue
+        # If we couldn't generate a unique question after retries, log warning
+        # The while loop will continue trying with other topics
         if not question_generated:
-            log_prompt_and_response("question_generation_failed", f"Failed to generate unique question for {topic_data['name']} after {max_retries} attempts")
+            log_prompt_and_response("question_generation_failed", f"Failed to generate unique question for {topic_data['name']} after {max_retries} attempts - will try different topic")
 
-    if not questions:
-        raise ValueError("Failed to generate any questions")
+    # Final check: did we get the requested number?
+    if len(questions) < num_questions:
+        log_prompt_and_response("insufficient_questions", f"Only generated {len(questions)}/{num_questions} questions after {topic_iteration_count} topic attempts")
+        # Still return what we have rather than failing completely
+        if not questions:
+            raise ValueError("Failed to generate any questions")
 
     return questions
 
